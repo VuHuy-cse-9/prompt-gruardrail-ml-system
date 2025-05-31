@@ -1,0 +1,17 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+**/__pycache__
+.python-version
+uv.lock
+
+# Virtual environments
+.venv
+
+# Training
+notebook/checkpoints
+notebook/dataset
