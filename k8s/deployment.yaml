@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-deployment
+  namespace: app-namespace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-pod
+  template:
+    metadata:
+      labels:
+        app: api-pod
+    spec:
+      containers:
+        - name: prompt-guardrail-app
+          image: docker.io/vnminhhuy2001/prompt-guardrail-service:0.0.1
+          resources:
+            requests:
+              cpu: 1
+              memory: 500Mi
+          ports:
+          - containerPort: 8000
