@@ -11,7 +11,10 @@ uv.lock
 
 # Virtual environments
 .venv
+**/.venv
 
 # Training
 notebook/checkpoints
 notebook/dataset
+.env
+**/.env
