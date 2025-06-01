@@ -1,0 +1,6 @@
+image:
+  repository: docker.io/vnminhhuy2001/prompt-guardrail-service
+  # This sets the pull policy for images.
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "0.0.1"
