@@ -6,7 +6,7 @@ metadata:
     app: {{ .Release.Name }}
   namespace: app-namespace
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: {{ .Release.Name }}
@@ -21,7 +21,7 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           resources:
             requests:
-              cpu: 1
+              cpu: 0.1
               memory: 500Mi
           ports:
           - containerPort: 8000
