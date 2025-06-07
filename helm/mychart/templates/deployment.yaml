@@ -4,7 +4,7 @@ metadata:
   name: {{ .Release.Name }}
   labels: 
     app: {{ .Release.Name }}
-  namespace: app-namespace
+  namespace: model-serving
 spec:
   replicas: 1
   selector:
