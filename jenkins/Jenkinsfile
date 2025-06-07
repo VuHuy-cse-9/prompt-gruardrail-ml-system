@@ -37,9 +37,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 script {
-                    container('helm') {
-                        sh("helm upgrade --install promptguard ./helm/mychart --namespace app-namespace")
-                    }
+                    sh("helm upgrade --install promptguard ./helm/mychart --namespace app-namespace")
                 }
             }
         }
