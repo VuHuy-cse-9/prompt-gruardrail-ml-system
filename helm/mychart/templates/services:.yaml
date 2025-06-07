@@ -1,0 +1,75 @@
+services:
+  3gs_api:
+    image: registry.aurora-tech.com/aurora/3gs-server:latest
+    container_name: 3gs_api
+    restart: always
+    depends_on:
+      - redis
+    env_file:
+      - .env
+    command: uvicorn main:app --workers ${API_NUM_WORKERS} --host 0.0.0.0 --port 8000
+    ports:
+      - "8021:8000"
+    volumes:
+      - upload_volume:/app/uploads
+    # Thay đổi 1: 3gs_api không dùng GPUs => Không cấp GPUs cho 3gs-api
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - capabilities: [gpu]
+    #           device_ids: ['1']
+    networks:
+      - my_network
+
+  3g_worker:
+    image: registry.aurora-tech.com/aurora/3gs-server:latest
+    container_name: 3gs_worker
+    restart: always
+    depends_on:
+      - redis
+    env_file:
+      - .env
+    
+    # Thay đổi 2: Thêm autoscale worker cho celery: MIN là 2, MAX là 8
+    command: celery --app worker.celery:app worker --loglevel=INFO \
+                    --concurrency=${CELERY_NUM_CONCURRENT} -n worker1@%h \
+                    --autoscale=${CELERY_NUM_CONCURRENT},${MIN_CELERY_NUM_CONCURRENT}
+    volumes:
+      - upload_volume:/app/uploads
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+              device_ids: ['1']
+    networks:
+      - my_network
+
+  redis:
+    image: redis:latest
+    container_name: redis_3gs
+    restart: always
+    networks:
+      - my_network
+    volumes:
+      - redis-data:/data
+  flower:
+    image: mher/flower:latest
+    restart: always
+    ports:
+      - 5555:5555
+    command: celery --broker=redis://redis_3gs:6379/0 flower --port=5555 --basic-auth=${FLOWER_USER}:${FLOWER_PASSWORD}
+    depends_on:
+      - redis
+    environment:
+      - FLOWER_PORT=5555
+    networks:
+      - my_network
+
+volumes:
+  upload_volume:
+  redis-data:
+networks:
+  my_network:
+    external: true 

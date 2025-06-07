@@ -18,3 +18,5 @@ notebook/checkpoints
 notebook/dataset
 .env
 **/.env
+
+**/.terraform*

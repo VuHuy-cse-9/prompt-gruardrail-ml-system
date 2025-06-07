@@ -18,30 +18,16 @@ provider "google" {
   region      = var.region
 }
 
-# // Google Compute Engine
-resource "google_compute_instance" "vm_instance" {
-  name         = "prompt-gruardrail-instance"
-  machine_type = "e2-medium"
-  zone         = var.zone
-
-  // This instances use ubuntu image
-  boot_disk {
-    initialize_params {
-      image = "projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20230727"
-    }
-  }
-
-  // Default network for the instance
-  network_interface {
-    network = "default"
-    access_config {}
-  }
-}
-
 // Google Kubernetes Engine
 resource "google_container_cluster" "primary" {
   name     = "${var.project_id}-gke"
-  location = var.region
+  location = var.zone
+  initial_node_count = var.cluster_node_count
+
+  node_config {
+    disk_size_gb = 80
+    machine_type = "e2-medium"
+  }
 
   // Enabling Autopilot for this cluster
   enable_autopilot = false
