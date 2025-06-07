@@ -24,13 +24,13 @@ pipeline {
             steps {
                 script {
                     echo 'Building image for deployment..'
-                    // dockerImage = docker.build registry + ":$BUILD_NUMBER"
-                    // cd api & docker build -t dockerImage .
-                    // echo 'Pushing image to dockerhub..'
-                    // docker.withRegistry( '', registryCredential ) {
-                    //     dockerImage.push()
-                    //     dockerImage.push('latest')
-                    // }
+                    dockerImage = docker.build registry + ":$BUILD_NUMBER"
+                    cd api & docker build -t dockerImage .
+                    echo 'Pushing image to dockerhub..'
+                    docker.withRegistry( '', registryCredential ) {
+                        dockerImage.push()
+                        dockerImage.push('latest')
+                    }
                 }
             }
         }
