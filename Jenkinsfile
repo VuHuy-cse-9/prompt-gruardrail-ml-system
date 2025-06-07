@@ -15,11 +15,6 @@ pipeline {
 
     stages {
         stage('Test') {
-            agent {
-                docker {
-                    image 'python:3.12'
-                }
-            }
             steps {
                 echo 'Testing model correctness..'
                 // sh 'pip install -r requirements.txt && pytest'
