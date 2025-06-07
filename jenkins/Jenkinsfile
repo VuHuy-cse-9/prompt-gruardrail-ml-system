@@ -10,7 +10,7 @@ pipeline {
 
     environment{
         registry = 'vnminhhuy2001/prompt-guardrail-service'
-        registryCredential = 'dockerhub'      
+        registryCredential = 'docker-hub-credentials'      
     }
 
     stages {
