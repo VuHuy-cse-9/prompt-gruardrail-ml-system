@@ -36,8 +36,11 @@ pipeline {
         }
         stage('Deploy') {
             steps {
-                echo 'Deploying models..'
-                echo 'Running a script to trigger pull and start a docker container'
+                script {
+                    container('helm') {
+                        sh("helm upgrade --install promptguard ./helm/mychart --namespace app-namespace")
+                    }
+                }
             }
         }
     }
