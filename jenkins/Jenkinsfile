@@ -47,7 +47,9 @@ pipeline {
             steps {
                 script {
                     container('helm') {
-                        sh("helm upgrade --install promptguard ./helm/mychart --namespace model-serving")
+                        sh("./scripts/nginx-system.sh")
+                        sh("./scripts/monitoring.sh")
+                        sh("./scripts/model-serving.sh")
                     }
                 }
             }
