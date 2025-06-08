@@ -1,34 +1,39 @@
-version: '3.8'
 services:
-  api_service:
+  api:
     build:
       context: api
-      dockerfile: Dockerfile
-      image: vnminhhuy2001/prompt-guardrail-service:latest
+      dockerfile: Dockerfile.dev
+    env_file:
+      - api/.env
     volumes:
       - ./api:/app
-    env_file:
-      - .env
+      - /Users/huyvu/.cache/huggingface:/checkpoint/huggingface
     ports:
-      - 8000:8000
+      - 12345:8000
     restart: unless-stopped
+    command: ["uvicorn","app:app","--workers", "1", "--host", "0.0.0.0", "--port", "8000"]
     networks:
       - prompt_guardrail_network
+    depends_on:
+      - otel-collector
 
   otel-collector:
     image: otel/opentelemetry-collector:latest
     volumes:
       - ./monitoring/otel_collector/config.yaml:/etc/otel-collector-config.yaml
     command: ["--config=/etc/otel-collector-config.yaml"]
-    networks:
-      - prompt_guardrail_network
     depends_on:
       - jaeger
+    networks:
+      - prompt_guardrail_network
 
   jaeger:
     image: jaegertracing/all-in-one:latest
     container_name: jaeger
     restart: unless-stopped
+    ports:
+      - "6831:6831/udp"
+      - "16686:16686"
     networks:
       - prompt_guardrail_network
 

@@ -4,6 +4,7 @@ torch
 transformers
 opentelemetry-sdk
 opentelemetry-instrumentation-fastapi
-# opentelemetry-exporter-otlp-proto-grpc
+opentelemetry-exporter-otlp-proto-grpc
 # opentelemetry-instrumentation-system-metrics
 # prometheus_fastapi_instrumentator
+python-dotenv
