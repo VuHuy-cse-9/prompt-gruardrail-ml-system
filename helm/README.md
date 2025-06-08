@@ -5,14 +5,11 @@
 # Create namespace
 kubectl create namespace nginx-system
 
-# Switch namespace
-kubectl ns nginx-system
-
 # Install CRDs
 kubectl apply -f https://raw.githubusercontent.com/nginx/kubernetes-ingress/v5.0.0/deploy/crds.yaml
 
 # Install nginx-controller with Helm
-helm install promt-guardrail oci://ghcr.io/nginx/charts/nginx-ingress --version 2.1.0
+helm install promt-guardrail oci://ghcr.io/nginx/charts/nginx-ingress --version 2.1.0 --namespace nginx-system
 ```
 
 or deploy with scrip
@@ -26,12 +23,9 @@ or deploy with scrip
 # Create namespace
 kubectl create namespace monitoring
 
-# Switch namespace
-kubectl ns monitoring
-
 # Deploying Otel Collector
 helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
-helm install otel-collector open-telemetry/opentelemetry-collector --set mode=deployment --set image.repository="ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s" --set command.name="otelcol-k8s"
+helm install otel-collector open-telemetry/opentelemetry-collector --set mode=deployment --set image.repository="ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s" --set command.name="otelcol-k8s" --namespace monitoring
 ```
 
 or deploy with script
@@ -44,11 +38,8 @@ or deploy with script
 # Create namespace
 kubectl create namespace model-serving
 
-# Switch namespace
-kubectl ns model-serving
-
 # Deploying app
-helm upgrade --install promptguard .
+helm upgrade --install promptguard . --namespace model-serving
 ```
 
 or deploy with script
