@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from router.core_service import router as CoreRouter
 from transformers import pipeline
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 import torch
 import os
 
@@ -15,14 +16,20 @@ async def lifespan(app: FastAPI):
     model_id = 'VuHuy/prompt-guardrail-bert-based-uncased'
     classifier = pipeline('text-classification', model=model_id, device='cpu')
     app.state.pipeline = classifier
+    # Instrument FastAPI app
+    FastAPIInstrumentor.instrument_app(app)
     yield
     # Release ML Model
     del classifier
     # Release GPU
     torch.cuda.empty_cache()
+    # Uninstrument app
+    FastAPIInstrumentor.uninstrument_app(app)
+    
 
 app = FastAPI(title="Prompt Guardrail Service", lifespan=lifespan)
 
+# Add Middle core
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -30,6 +37,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.get("/", tags=["Root"])
 async def read_root():

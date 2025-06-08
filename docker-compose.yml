@@ -1,0 +1,37 @@
+version: '3.8'
+services:
+  api_service:
+    build:
+      context: api
+      dockerfile: Dockerfile
+      image: vnminhhuy2001/prompt-guardrail-service:latest
+    volumes:
+      - ./api:/app
+    env_file:
+      - .env
+    ports:
+      - 8000:8000
+    restart: unless-stopped
+    networks:
+      - prompt_guardrail_network
+
+  otel-collector:
+    image: otel/opentelemetry-collector:latest
+    volumes:
+      - ./monitoring/otel_collector/config.yaml:/etc/otel-collector-config.yaml
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    networks:
+      - prompt_guardrail_network
+    depends_on:
+      - jaeger
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    restart: unless-stopped
+    networks:
+      - prompt_guardrail_network
+
+networks:
+  prompt_guardrail_network:
+    driver: bridge
