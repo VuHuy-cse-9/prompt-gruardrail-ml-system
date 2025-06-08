@@ -3,9 +3,8 @@ from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from router.core_service import router as CoreRouter
 from transformers import pipeline
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 import torch
-from monitor import setup_monitoring
+from monitor import setup_monitoring, remove_monitoring
 from dotenv import load_dotenv
 import logging
 
@@ -23,17 +22,15 @@ async def lifespan(app: FastAPI):
     classifier = pipeline('text-classification', model=model_id, device='cpu')
     app.state.pipeline = classifier
     # Setup monitoring
-    setup_monitoring()
+    setup_monitoring(app)
     # Instrument FastAPI app
-    FastAPIInstrumentor.instrument_app(app)
     yield
     # Release ML Model
     del classifier
     # Release GPU
     torch.cuda.empty_cache()
     # Uninstrument app
-    FastAPIInstrumentor.uninstrument_app(app)
-    yield
+    remove_monitoring(app)
 
 app = FastAPI(title="Prompt Guardrail Service", lifespan=lifespan)
 

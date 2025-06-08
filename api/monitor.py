@@ -2,13 +2,15 @@ from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 import os
 from dotenv import load_dotenv
 from opentelemetry.sdk.metrics import MeterProvider
-from opentelemetry.metrics import set_meter_provider
+from opentelemetry.metrics import set_meter_provider, get_meter_provider
 from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import get_tracer_provider, set_tracer_provider
 from opentelemetry.sdk.trace import TracerProvider
+from fastapi import FastAPI
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 import logging
 
 logger = logging.getLogger(__name__)
@@ -49,11 +51,17 @@ def setup_tracing():
     span_processor = BatchSpanProcessor(oltp_exporter)
     get_tracer_provider().add_span_processor(span_processor)
 
-def setup_monitoring():
+def setup_monitoring(app: FastAPI):
     setup_metric()
     setup_tracing()
-    return
+    FastAPIInstrumentor.instrument_app(app, tracer_provider=get_tracer_provider(), meter_provider=get_meter_provider())
+    return 
 
+def remove_monitoring(app: FastAPI):
+    FastAPIInstrumentor.uninstrument_app(app)
+    get_tracer_provider().shutdown()
+    get_meter_provider().shutdown()
+    return
 
 def trace(name, attributes=None):
     """

@@ -37,6 +37,43 @@ services:
     networks:
       - prompt_guardrail_network
 
+  prometheus:
+    image: prom/prometheus:latest
+    volumes: 
+      - ./monitoring/prometheus/config.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - 9090:9090
+    networks:
+      - prompt_guardrail_network
+
+  grafana:
+    image: grafana/grafana:latest
+    volumes: 
+      - grafana-storage:/var/lib/grafana
+    ports:
+      - 3000:3000
+    networks:
+      - prompt_guardrail_network
+
+  node_exporter:
+    image: quay.io/prometheus/node-exporter:latest
+    container_name: node_exporter
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+    pid: host
+    restart: unless-stopped
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host:ro
+    networks:
+      - prompt_guardrail_network
+
+volumes:
+  grafana-storage:
+
 networks:
   prompt_guardrail_network:
     driver: bridge
