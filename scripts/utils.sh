@@ -1,3 +1,5 @@
+#!/bin/bash
+
 ensure_namespace() {
   local ns="$1"
   if ! kubectl get namespace "$ns" > /dev/null 2>&1; then
