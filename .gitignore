@@ -26,3 +26,5 @@ notebook/dataset
 
 .coverage
 .pytest_cache
+
+README.note.md
