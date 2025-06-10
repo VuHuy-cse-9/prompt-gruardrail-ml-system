@@ -21,11 +21,7 @@ pipeline {
                 }
             }
             steps {
-                script {
-                    // Create and activate virtual environment
-                    echo 'Creating model virtual environment'
-                    sh "python -m venv .venv"
-                    sh "source .venv/bin/activate"
+                script {                    
                     // Install dependencies into the virtual environment
                     echo 'Testing model correctness..'
                     sh 'pip install -r tests/requirements.txt && pytest'
