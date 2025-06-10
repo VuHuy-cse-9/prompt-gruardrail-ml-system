@@ -1,8 +1,9 @@
 fastapi
-uvicorn
 torch
 transformers
 opentelemetry-sdk
 opentelemetry-instrumentation-fastapi
 opentelemetry-exporter-otlp-proto-grpc
-python-dotenv
+pytest
+httpx
+pytest-cov
