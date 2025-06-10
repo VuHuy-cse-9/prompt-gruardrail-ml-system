@@ -15,11 +15,11 @@ pipeline {
 
     stages {
         stage('Test') {
-            agent {
-                docker {
-                    image 'python:3.12' 
-                }
-            }
+            // agent {
+            //     docker {
+            //         image 'python:3.12' 
+            //     }
+            // }
             steps {
                 script {                    
                     // Install dependencies into the virtual environment
@@ -55,8 +55,6 @@ pipeline {
             steps {
                 script {
                     container('helm') {
-                        sh("./scripts/nginx-system.sh")
-                        sh("./scripts/monitoring.sh")
                         sh("./scripts/model-serving.sh")
                     }
                 }
