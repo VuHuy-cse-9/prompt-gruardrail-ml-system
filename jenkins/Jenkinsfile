@@ -15,6 +15,11 @@ pipeline {
 
     stages {
         stage('Test') {
+            agent {
+                docker {
+                    image 'python:3.12' 
+                }
+            }
             steps {
                 script {
                     // Create and activate virtual environment

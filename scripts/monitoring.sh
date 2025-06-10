@@ -10,9 +10,9 @@ KUBE_STACK_SERVICE_NAME="${SERVICE_NAME}-prom-gra"
 ensure_namespace $NAMESPACE
 
 # Step 2: Deploy nginx-controller
-# if service_exists "${SERVICE_NAME}-otel-opentelemetry-collector" $NAMESPACE; then
-#   echo "Service ${SERVICE_NAME} exists"
-# else
+if service_exists "${SERVICE_NAME}-otel-opentelemetry-collector" $NAMESPACE; then
+  echo "Service ${SERVICE_NAME} exists"
+else
   echo "Creating service..."
   echo "Install Otel collector"
   helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
@@ -20,7 +20,7 @@ ensure_namespace $NAMESPACE
     -f helm/otel_collector/my_values.yaml \
     --set mode=deployment \
     --namespace $NAMESPACE
-# fi
+fi
 
 if service_exists "${KUBE_STACK_SERVICE_NAME}-grafana"  $NAMESPACE; then
   echo "Service ${KUBE_STACK_SERVICE_NAME} exists"
