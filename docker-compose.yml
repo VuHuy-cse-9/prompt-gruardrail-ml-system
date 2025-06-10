@@ -1,0 +1,79 @@
+services:
+  api:
+    build:
+      context: api
+      dockerfile: Dockerfile.dev
+    env_file:
+      - api/.env
+    volumes:
+      - ./api:/app
+      - /Users/huyvu/.cache/huggingface:/checkpoint/huggingface
+    ports:
+      - 12345:8000
+    restart: unless-stopped
+    command: ["uvicorn","app:app","--workers", "1", "--host", "0.0.0.0", "--port", "8000"]
+    networks:
+      - prompt_guardrail_network
+    depends_on:
+      - otel-collector
+
+  otel-collector:
+    image: otel/opentelemetry-collector:latest
+    volumes:
+      - ./monitoring/otel_collector/config.yaml:/etc/otel-collector-config.yaml
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    depends_on:
+      - jaeger
+    networks:
+      - prompt_guardrail_network
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    restart: unless-stopped
+    ports:
+      - "6831:6831/udp"
+      - "16686:16686"
+    networks:
+      - prompt_guardrail_network
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes: 
+      - ./monitoring/prometheus/config.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - 9090:9090
+    networks:
+      - prompt_guardrail_network
+
+  grafana:
+    image: grafana/grafana:latest
+    volumes: 
+      - grafana-storage:/var/lib/grafana
+    ports:
+      - 3000:3000
+    networks:
+      - prompt_guardrail_network
+
+  node_exporter:
+    image: quay.io/prometheus/node-exporter:latest
+    container_name: node_exporter
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+    pid: host
+    restart: unless-stopped
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host:ro
+    networks:
+      - prompt_guardrail_network
+
+volumes:
+  grafana-storage:
+
+networks:
+  prompt_guardrail_network:
+    driver: bridge

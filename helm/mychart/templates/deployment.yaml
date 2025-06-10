@@ -4,7 +4,7 @@ metadata:
   name: {{ .Release.Name }}
   labels: 
     app: {{ .Release.Name }}
-  namespace: model-serving
+  namespace: {{ .Values.namespace }}
 spec:
   replicas: 1
   selector:
@@ -25,3 +25,11 @@ spec:
               memory: 500Mi
           ports:
           - containerPort: 8000
+          env:
+            - name: OLTP_ENDPOINT
+              value: "grpc://otel-collector.monitoring.svc.cluster.local:4317"
+            - name: OLTP_INSECURE
+              value: "true"
+            - name: SERVICE_NAME
+              value: "prompt_guardrail"
+          
