@@ -59,6 +59,8 @@ After that, authenticate you google cloud account using below command:
 gcloud auth application-default login
 ```
 
+Since we need to ssh to Jenkins VM instance. Generate your public SSH key, and replace ssh_keys default value at `iac/terraform/variables.tf`. 
+
 After everything is completed, run below code to provision you infrastructure.
 ```bash
 cd iac/terraform
@@ -67,32 +69,50 @@ terraform plan
 terraform apply
 ```
 
+// TODO: Add video here.
+
 After this command, you would provision GKE to allocate:
 1. A Cluster with 3 nodes, each node is a e2-medium with 80GB disk size. These nodes locates at zone: asia-southeast1-a. 
 2. A Compute instance: e2-standard-4 for deploying Jenkins. 
 3. A firewall allow rules, so that we can access Jenkins from public IP.
 
-Finally, connect to your cluster by run the below command (you should have installed kubernetes):
+Go to Google Cloud Console -> Kubernets Engine -> Cluster, you should see your cluster their. Connect to the cluster using the command below:
 ```
 gcloud container clusters get-credentials <your_project_id>-gke --zone asia-southeast1-a --project <your_project_id>
 ```
 
-Run the below command to see there are three nodes on your cluster:
+You can able to ssh to the Jenkins instance
 ```
-kubectl get nodes
+ssh huyvu2001@35.247.183.230
 ```
 
 ## 4. Deploying your service on your cluster
 
 **Overview**: In this step, we use Helm to deploy our app in our cluster. These app would be setup on three distinct namespaces: 1. api app would deploy on model-serving namespace, 2. Otel Collector, Jaeger, Prometheus, Grafana, and Node exporter would deploy on monitoring namespace, 3. An ingress controller, so we can access our app by domain.
-To launch up all the services in docker-compose, run the below scripts:
+
+To launch up the nginx-ingress controller, and monitoring services, run the below scripts:
 ```
 ./scripts/nginx-system.sh
 ./scripts/monitoring.sh
+```
+Since we would access our service through nginx-ingress controller, we would use nip.io to facilitate of the need of domain name. First, we get the external ip of nginx ingress controller service
+
+```
+kubectl ns nginx-system
+kubectl get service
+```
+
+You should see the EXTERNAL IP of nginx service. Replace that we the default value `host: 34.87.107.6.nip.io` in helm/mychart/templates/nginx-ingress.yaml.
+
+After that, you should start our api service
+
+```
 ./scripts/model-serving.sh
 ```
 
-In order to let these services connect to each other, we need addtional setting that I would discuss below.
+After the service starts up completely, you can access our service at `EXTERNAL_IP.nip.io:8005/docs`.
+
+![service-ui](./assets/service-ui.png)
 
 ### a. Prometheus
 
@@ -141,3 +161,104 @@ Overview: TODO: Write how to setup API.
 
 
 ## 5. Setup CI/CD
+
+### a. Setup Jenkins
+
+First, ssh to Jenkins instance
+```
+ssh huyvu2001@35.247.183.230
+```
+
+After that, install docker following to instructions
+1. [Install Docker Engine on Ubuntu](https://docs.docker.com/engine/install/ubuntu/)
+2. [Linux post-installation steps for Docker Engine](https://docs.docker.com/engine/install/linux-postinstall/)
+
+Using vim or nano to create a docker-compose.yaml and past the context of that in jenkins/docker-compose.yml. 
+
+We then start up the Jenkins service using docker compose
+```
+docker compose up -d
+```
+
+Execute to jenkins container and install docker:
+```
+docker exec -it jenkins /bin/bash
+curl https://get.docker.com > dockerinstall && chmod 777 dockerinstall && ./dockerinstall
+```
+
+After the service starts up completely, you can access Jenkins via <VM_EXTERNAL_IP>:8081. It would require you to give it the password. Return to the terminal that you have already executed in Jenkins container, run the below command to get the password
+
+```
+cat /var/jenkins_home/secrets/initialAdminPassword
+```
+
+Select install neccessary plugins. Then, completing the setup to get to the Welcome to Jenkins UI.
+
+<div style="display: flex;">
+  <img src="assets/jenkins_token_password.png" alt="Image 1" width="400" style="width: 50%;">
+  <img src="assets/jenkins_install_plugins.png" alt="Image 2" style="width: 50%;">
+</div>
+
+After that, we need to install neccessary plugins that Jenkins would use for CI/CD. Go to Manage Jenkins -> Plugins -> Available plugins, install Kubernets & Docker pipeline plugins.
+![image](./assets/jenkins_plugins.png)
+
+### b. Connect Jenkins to GKE
+
+Open the terminal that has connected to GKE. Create the model-serving namespace (the namespace that Jenkins would access to deplo our app). 
+```
+kubectl create ns model-serving
+```
+Then, allow Jenkins's role (system:anynomous) to access Jenkins with admin role.
+```
+kubectl create clusterrolebinding model-serving-admin-binding \
+  --clusterrole=admin \
+  --serviceaccount=model-serving:default \
+  --namespace=model-serving
+
+kubectl create clusterrolebinding anonymous-admin-binding \
+  --clusterrole=admin \
+  --user=system:anonymous \
+  --namespace=model-serving
+```
+
+On the Jenkins UI, Go to Mange Jenkins -> Clouds -> New Cloud, add cloud name and select Kubernetes.
+
+In the next step, we require a 1) GKE External IP, and 2) Kubernetes server certificate key. First, grab you GKE External IP in Google Cloud console -> Kubernetes Engine -> Select you Cluster -> Control Plan Networking -> Copy public endpoint. This is your GKE External IP.
+![GKE-Cluster-IP](./assets/gke-cluster-ip.png)
+
+Then, run the command below to list your GKE information. Search your cluster using Cluster IP.
+```
+cat ~/.kube/config
+```
+
+![cluster-credential](./assets/gke-credentials-key.png)
+
+Finally, fill the missing field in Jeknins Cloud setting
+![jenkins_cloud_setting](./assets/jenkins_setup_cloud.png)
+
+
+### c. Create CI/CD pipeline
+
+**Create CI/CD pipeline**
+First create a new Github access token at github -> Account -> settings -> Developer settings -> Personal Access tokens -> Tokens classic, create a new one.
+![github-access-token](./assets/github-access-token.png)
+
+Go to Jenkins -> New Item -> Create a Multibranch pipeline with a name "prompt-guardrail-service". In the configuration page, go to "Branch Sources" -> Add source github.
+1. Create a new credentials, using our github access token.
+2. Copy our github repo  and past to to the github HTTPs URL.
+After that, click validate if Jenkins can access the repo. Click apply and save.
+![github-access-token](./assets/jenkins-branch-source.png)
+
+
+**Create Github Webhook**: Go to your repository, click settings -> Webhooks -> Add webhooks -> Past your VM instance External IP with the format `http://<VM_External_IP>:8081/github-webhook/`:
+![github-webhook](./assets/github_webhooks.png)
+
+### d. Setup docker credentials.
+Currently, our docker image is in public state. If you docker image is private, you can setup a docker credential so that Jenkins can access your private docker image.
+
+First, get your docker access token following this [instruction](https://docs.docker.com/security/for-developers/access-tokens/).
+
+Then, in Jenkins UI, go to Manage Jenkins ->  Credentials -> Stores scoped to Jenkins -> System -> Global Credentials -> Add Credentials. Fill in all the field, where Password is your docker access token. for the id, you should set it with: `docker-hub-credentials`. Then, click create.
+![jenkins-docker-hub-credentials](./assets/jenkins-docker-hub-credentials.png)
+
+Now, you have completed setting up Jenkins.
