@@ -10,7 +10,7 @@ KUBE_STACK_SERVICE_NAME="${SERVICE_NAME}-prom-gra"
 ensure_namespace $NAMESPACE
 
 # Step 2: Deploy nginx-controller
-if service_exists "${SERVICE_NAME}-otel-opentelemetry-collector" $NAMESPACE; then
+if service_exists "otel-collector" $NAMESPACE; then
   echo "Service ${SERVICE_NAME} exists"
 else
   echo "Creating service..."
@@ -37,5 +37,5 @@ else
   helm repo add jaegertracing https://jaegertracing.github.io/helm-charts
   helm upgrade --install jaeger jaegertracing/jaeger -n monitoring \
               --set fullnameOverride="jaeger"\
-              --set allInOne.enabled=true
+              --values helm/jaeger/values.yaml
 fi

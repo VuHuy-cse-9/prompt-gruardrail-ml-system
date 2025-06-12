@@ -20,7 +20,7 @@ provider "google" {
 
 // Google Kubernetes Engine
 resource "google_container_cluster" "primary" {
-  name     = "${var.project_id}-gke"
+  name     = "minhhuy-fsds-gke"
   location = var.zone
   initial_node_count = var.cluster_node_count
 
