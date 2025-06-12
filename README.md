@@ -69,8 +69,6 @@ terraform plan
 terraform apply
 ```
 
-// TODO: Add video here.
-
 After this command, you would provision GKE to allocate:
 1. A Cluster with 3 nodes, each node is a e2-medium with 80GB disk size. These nodes locates at zone: asia-southeast1-a. 
 2. A Compute instance: e2-standard-4 for deploying Jenkins. 
@@ -148,16 +146,59 @@ spec:
   ...
 ```
 
+
 Step 5: Restart the promtheus service
 ```
 helm upgrade --install promt-guardrail-prom-gra prometheus-community/kube-prometheus-stack --namespace monitoring
 ```
 
+To check whether your setting is correct, use port-forwarding to access prometheus website
+```
+kubectl port-forward -n monitoring svc/promt-guardrail-prom-gra-k-prometheus 9090:9090
+```
+
+Go to target-health, you should see promtheus has connected to otel-collector successfully.
+![promtheus-connect-to-otel-collector](./assets/prometheus-connect-otel.png)
+
 ### b. Otel Collector
 Overview: we need to tell Otel collector the URI if Jaeger as well as the port it should expose for promtheus to grab. From this [discussion](https://github.com/open-telemetry/opentelemetry-collector-contrib/discussions/31415), I override some of the default value, which is defined at helm/otel_collector/my_values.yaml. I have already applied this value at the `scripts/monitoring.sh`, so we don't have to do anthing.
 
 ### c. Grafana:
-Overview: TODO: Write how to setup API.
+You can access Grafana service through port-forwarding. First, let see what the Grafana service name through the command:
+```
+kubectl get service
+```
+It should be something like `promt-guardrail-prom-gra-grafana`
+
+Run the command below. Then you can access it through localhost:3000
+```
+kubectl port-forward -n monitoring svc/promt-guardrail-prom-gra-grafana 3000:80
+```
+The default credentials for Grafana are usually:
+- Username: admin
+- Password: prom-operator (you should change this immediately)
+
+Go to Grafana home -> Add first data source -> Prometheus, pass the promtheus service FQDN, it should be.
+`http://promt-guardrail-prom-gra-k-prometheus.monitoring.svc.cluster.local:9090`. Click save & test to make sure the connection is correct.
+
+![grafana-connect-prometheus](./assets/grafana-connect-pometheus.png)
+
+You can view the node system metrics at Dashboard -> Node Exporters/Nodes
+![node-exporters](./assets/node-exporter.png)
+
+### d. Jaeger
+
+If your otel-collector doesn't go anything wrong, Jaeger should connect to Otel Collector sucessfully. Run the port-forwarding as follow to access Jaeger UI. 
+```
+kubectl port-forward -n monitoring svc/jaeger-query 16686:16686
+```
+
+Then, go to our service (the domain you have set at helm/mychart/templates/nginx-ingress.yaml), e.g 34.87.107.6.nip.io. Run a few request test. Then, go to Jaeger, you should see spans that our service send to Jaeger.
+
+<div style="display: flex;">
+  <img src="assets/service-test-spans.png" alt="Image 1" width="400" style="width: 50%;">
+  <img src="assets/jaeger-view.png" alt="Image 2" style="width: 50%;">
+</div>
 
 
 ## 5. Setup CI/CD
