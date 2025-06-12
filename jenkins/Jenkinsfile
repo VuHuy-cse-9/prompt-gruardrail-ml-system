@@ -15,9 +15,17 @@ pipeline {
 
     stages {
         stage('Test') {
+            agent {
+                docker {
+                    image 'python:3.12' 
+                }
+            }
             steps {
-                echo 'Testing model correctness..'
-                // sh 'pip install -r requirements.txt && pytest'
+                script {                    
+                    // Install dependencies into the virtual environment
+                    echo 'Testing model correctness..'
+                    sh 'pip install -r tests/requirements.txt && pytest'
+                }
             }
         }
         stage('Build') {
@@ -47,7 +55,7 @@ pipeline {
             steps {
                 script {
                     container('helm') {
-                        sh("helm upgrade --install promptguard ./helm/mychart --namespace model-serving")
+                        sh("./scripts/model-serving.sh")
                     }
                 }
             }

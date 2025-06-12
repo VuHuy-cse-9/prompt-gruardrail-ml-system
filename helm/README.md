@@ -1,27 +1,48 @@
 # Deploying App on Kubernetes with Helm
 
-
-## Step 1: Create namespace and switch to that ns
-```
-cd mychart/templates
-kubectl apply -f namespace.yaml
-kubectl ns app-namespace
-```
-
-## Step 2: Deploy ingress controller
-We follow this document to install ingress controller: [ingress-controller document](https://docs.nginx.com/nginx-ingress-controller/installation/installing-nic/installation-with-helm/). 
-
-You should change kubectl into your namespace before installing nginx-controller.
-
+## Step 1: Deploy Nginx ingress controller:
 ```bash
+# Create namespace
+kubectl create namespace nginx-system
+
 # Install CRDs
 kubectl apply -f https://raw.githubusercontent.com/nginx/kubernetes-ingress/v5.0.0/deploy/crds.yaml
 
 # Install nginx-controller with Helm
-helm install my-release oci://ghcr.io/nginx/charts/nginx-ingress --version 2.1.0
+helm install promt-guardrail oci://ghcr.io/nginx/charts/nginx-ingress --version 2.1.0 --namespace nginx-system
 ```
 
-## Step 3: Deploying our app
+or deploy with scrip
+```bash
+./scripts/nginx-system.sh
 ```
-helm upgrade --install promptguard .
+
+## Step 2: Deploying monitoring service
+
+```bash
+# Create namespace
+kubectl create namespace monitoring
+
+# Deploying Otel Collector
+helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+helm install otel-collector open-telemetry/opentelemetry-collector --set mode=deployment --set image.repository="ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s" --set command.name="otelcol-k8s" --namespace monitoring
+```
+
+or deploy with script
+```bash
+./scripts/monitoring.sh
+```
+
+## Step 3: Deploying model
+```bash
+# Create namespace
+kubectl create namespace model-serving
+
+# Deploying app
+helm upgrade --install promptguard . --namespace model-serving
+```
+
+or deploy with script
+```bash
+./scripts/model-serving.sh
 ```

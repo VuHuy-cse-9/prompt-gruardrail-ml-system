@@ -20,3 +20,11 @@ notebook/dataset
 **/.env
 
 **/.terraform*
+
+.DS_Store
+**/.DS_Store
+
+.coverage
+.pytest_cache
+
+README.note.md

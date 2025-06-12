@@ -1,7 +1,6 @@
-version: '3.8'
 services:
   jenkins:
-    image: fullstackdatascience/jenkins:lts
+    image: jenkins/jenkins:latest-jdk21
     container_name: jenkins
     restart: unless-stopped
     privileged: true

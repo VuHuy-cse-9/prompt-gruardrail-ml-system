@@ -1,0 +1,83 @@
+mode: "deployment"
+
+fullnameOverride: "otel-collector"
+
+presets:
+  kubernetesAttributes:
+    enabled: true
+
+config:
+  receivers:
+    jaeger: null
+    zipkin: null
+  
+  exporters:
+    debug:
+      verbosity: detailed
+    
+    otlp/jaeger:
+      endpoint: http://jaeger-collector.monitoring.svc.cluster.local:4317
+      tls:
+        insecure: true
+
+    prometheus:
+      endpoint: 0.0.0.0:8889
+  
+  service:
+    pipelines:
+      traces:
+        receivers:
+          - otlp
+        processors:
+          - memory_limiter
+          - batch
+        exporters:
+          - otlp/jaeger
+      
+      metrics:
+        receivers:
+          - otlp
+          - prometheus
+        processors:
+          - memory_limiter
+          - batch
+        exporters:
+          - debug
+          - prometheus
+      
+      logs: null
+
+ports:
+  jaeger-compact:
+    enabled: false
+  jaeger-thrift:
+    enabled: false
+  jaeger-grpc:
+    enabled: true
+  zipkin:
+    enabled: false
+  metrics:
+    enabled: true
+    containerPort: 8889
+    servicePort: 8889
+    protocol: TCP
+
+resources:
+  limits:
+    cpu: 250m
+    memory: 512Mi
+
+ingress:
+  enabled: false
+
+serviceMonitor:
+  enabled: true
+
+  extraLabels:
+    release: prometheus
+
+
+image:
+  repository: otel/opentelemetry-collector-contrib
+  tag: "latest"
+  pullPolicy: Always

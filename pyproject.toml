@@ -12,5 +12,9 @@ dependencies = [
     "evaluate",
     "scikit-learn",
     "accelerate>=0.26.0",
-    "ipywidgets"
+    "ipywidgets",
+    "pytest",
+    "httpx",
+    "fastapi",
+    "pytest-cov",
 ]

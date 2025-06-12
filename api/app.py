@@ -4,25 +4,37 @@ from fastapi.middleware.cors import CORSMiddleware
 from router.core_service import router as CoreRouter
 from transformers import pipeline
 import torch
-import os
+from monitor import setup_monitoring, remove_monitoring
+from dotenv import load_dotenv
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+load_dotenv()
 
 classifer = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Load the ML model
-    # TODO: Load ML Model
     model_id = 'VuHuy/prompt-guardrail-bert-based-uncased'
     classifier = pipeline('text-classification', model=model_id, device='cpu')
     app.state.pipeline = classifier
+    # Setup monitoring
+    setup_monitoring(app)
+    # Instrument FastAPI app
     yield
     # Release ML Model
     del classifier
     # Release GPU
     torch.cuda.empty_cache()
+    # Uninstrument app
+    remove_monitoring(app)
 
 app = FastAPI(title="Prompt Guardrail Service", lifespan=lifespan)
 
+# Add Middle core
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -30,6 +42,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.get("/", tags=["Root"])
 async def read_root():
