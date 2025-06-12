@@ -4,14 +4,16 @@
 
 [1. System architecture with Kubernetes](#1-system-architecture-with-kubernetes-k8s)
 
-[2. Local deployment using docker compose](#2-local-deployment-with-docker-compose)
+[2. Local Deployment with docker compose](#2-local-deployment-with-docker-compose)
 
-[3. Deployment on Google Cloud Platform](#3-deployment-on-google-cloud-platform)
+[3. Provisioning Infrastructure on Google Cloud with Terraform](#3-provisioning-infrastructure-on-google-cloud-with-terraform)
 
-[4. Setup CI/CD](#4-setup-cicd)
+[4. Deploying service on GKE cluster](#4-deploying-service-on-gke-cluster)
+
+[5. Setup CI/CD](#5-setup-cicd)
 
 
-## 1. System architecture with Kubernetes (K8s)
+## 1. System architecture with Kubernetes
 ![](assets/archi.png)
 
 ## 2. Local Deployment with docker compose
@@ -84,7 +86,7 @@ You can able to ssh to the Jenkins instance
 ssh huyvu2001@35.247.183.230
 ```
 
-## 4. Deploying your service on your cluster
+## 4. Deploying service on GKE cluster
 
 **Overview**: In this step, we use Helm to deploy our app in our cluster. These app would be setup on three distinct namespaces: 1. api app would deploy on model-serving namespace, 2. Otel Collector, Jaeger, Prometheus, Grafana, and Node exporter would deploy on monitoring namespace, 3. An ingress controller, so we can access our app by domain.
 
@@ -303,3 +305,5 @@ Then, in Jenkins UI, go to Manage Jenkins ->  Credentials -> Stores scoped to Je
 ![jenkins-docker-hub-credentials](./assets/jenkins-docker-hub-credentials.png)
 
 Now, you have completed setting up Jenkins.
+
+![](./assets/jenkins-build-pipeline.png)
