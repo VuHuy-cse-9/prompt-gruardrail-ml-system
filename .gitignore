@@ -28,3 +28,6 @@ notebook/dataset
 .pytest_cache
 
 README.note.md
+
+**/.terraform*
+**/terraform.tfstate*

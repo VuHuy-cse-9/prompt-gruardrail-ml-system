@@ -12,21 +12,21 @@ from opentelemetry.sdk.trace import TracerProvider
 from fastapi import FastAPI
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 import logging
+from functools import wraps
 
 logger = logging.getLogger(__name__)
 
 load_dotenv()
-
-service_name = os.getenv('SERVICE_NAME', 'default_service')
+APP_SERVICE_NAME = os.getenv('SERVICE_NAME', 'default_service')
 OLTP_ENDPOINT = os.getenv('OLTP_ENDPOINT', 'localhost:4317')
 OLTP_INSECURE= os.getenv('OLTP_INSECURE', 'False').lower() == 'true'
 
-logger.info(f"Service Name: {service_name}")
+logger.info(f"Service Name: {APP_SERVICE_NAME}")
 logger.info(f"OTLP Endpoint: {OLTP_ENDPOINT}")
 logger.info(f"OTLP Insecure: {OLTP_INSECURE}")
 
 def setup_metric():
-    resource = resource=Resource.create({SERVICE_NAME: service_name})
+    resource = resource=Resource.create({SERVICE_NAME: APP_SERVICE_NAME})
 
     # Configure OpenTelemetry metrics exporter
     otlp_exporter = OTLPMetricExporter(
@@ -40,7 +40,7 @@ def setup_metric():
     return
 
 def setup_tracing():
-    resource = resource=Resource.create({SERVICE_NAME: service_name})
+    resource = resource=Resource.create({SERVICE_NAME: APP_SERVICE_NAME})
     set_tracer_provider(TracerProvider(resource=resource))
 
     oltp_exporter = OTLPSpanExporter(
@@ -68,9 +68,10 @@ def trace(name, attributes=None):
     Decorator to trace a function
     """
     def decorator(func):
-        def wrapper(*args, **kwargs):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
             tracer = get_tracer_provider().get_tracer(__name__)
             with tracer.start_as_current_span(name, attributes=attributes):
-                return func(*args, **kwargs)
+                return await func(*args, **kwargs)
         return wrapper
     return decorator

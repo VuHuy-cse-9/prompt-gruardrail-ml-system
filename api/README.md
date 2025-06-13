@@ -2,7 +2,7 @@
 
 ## 1. Start on local machine
 ```
-uvicorn app:app --workers 1 --host 0.0.0.0  --port 12345
+uvicorn app:app --workers 4 --host 0.0.0.0  --port 12345
 ```
 
 ## 2. Start with Docker
