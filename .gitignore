@@ -31,3 +31,5 @@ README.note.md
 
 **/.terraform*
 **/terraform.tfstate*
+
+.env.gce

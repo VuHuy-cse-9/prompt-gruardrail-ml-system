@@ -51,6 +51,13 @@ Now, we would discuss a little bit about how each service work:
 **prometheus**: I configure prometheus to collect metrics from otel collector and node-exporter in `monitoring/prometheus/config.yml`.
 **grafana**: It's the place for you to visualize metrics collected from promtheus. 
 
+
+Launch logging server
+```
+cd elk
+docker-compose -f docker-compose.yml -f extensions/filebeat/filebeat-compose.yml up
+```
+
 ## 3. Provisioning Infrastructure on Google Cloud with Terraform
 Overview: In this step, you would provision Google Cloud infrastructure using Terraform. I have setup all the Terraform's configuration at iac/terraform folder.
 
