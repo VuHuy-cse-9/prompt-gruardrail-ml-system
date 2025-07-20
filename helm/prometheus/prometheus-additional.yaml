@@ -1,3 +1,0 @@
-- job_name: "otel_collector"
-  static_configs:
-  - targets: ["otel-collector.monitoring.svc.cluster.local:8889"]

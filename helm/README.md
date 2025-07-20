@@ -42,7 +42,12 @@ kubectl create namespace model-serving
 helm upgrade --install promptguard . --namespace model-serving
 ```
 
+helm upgrade --install promptguard . --namespace default
+
 or deploy with script
 ```bash
 ./scripts/model-serving.sh
 ```
+
+cd elasticsearch
+helm -n logging install elasticsearch .
