@@ -14,7 +14,7 @@
 
 Welcome to the architectural blueprint of our system! This section provides an overview of how we orchestrate services using Kubernetes, ensuring scalability, resilience, and observability.
 
-![](assets/mlops1_architecture.jpg)
+![](assets/mlops1_architecture.png)
 
 
 ---
