@@ -112,12 +112,20 @@ kubectl create namespace nginx-system
 ./scripts/nginx-system.sh
 ```
 
+Then, run the script below to get the nginx service IP address
+```
+source ./scripts/nginx-system-ip.sh
+```
+Save the external ip somewhere to access to other service.
+
 ### b. Deploy Prompt Guardrail Service
 
 ```bash
 kubectl create namespace model-serving
 ./scripts/model-serving.sh
 ```
+
+Then, you can access your service through `app.$EXTERNAL_IP.nip.io`
 
 ### c. Deploy Otel Collector
 
@@ -130,14 +138,12 @@ kubectl create namespace model-serving
 ```bash
 kubectl create namespace monitoring
 ./scripts/prometheus-stack.sh
-kubectl port-forward -n monitoring svc/kube-prom-stack-prometheus 9090:9090
 ```
+
 
 ### e. Access Grafana
 
-```bash
-kubectl port-forward -n monitoring svc/kube-prom-stack-grafana 3000:80
-```
+You can access grafana through `grafana.$EXTERNAL_IP.nip.io`
 
 - Username: `huyvu`
 - Password: `huyvu_grafana_2025`
@@ -146,8 +152,9 @@ kubectl port-forward -n monitoring svc/kube-prom-stack-grafana 3000:80
 
 ```bash
 ./scripts/jaeger.sh
-kubectl port-forward -n monitoring svc/jaeger-query 16686:16686
 ```
+
+Then, you can access Jaeger UI through `jaeger.$EXTERNAL_IP.nip.io`
 
 ### g. Elasticsearch Stack
 
@@ -157,8 +164,9 @@ kubectl create namespace logging
 kubectl get secret elasticsearch-credentials -n logging -o jsonpath='{.data.password}' | base64 --decode
 ./scripts/ELK/kibana.sh
 ./scripts/ELK/filebeat.sh
-kubectl port-forward svc/kibana -n logging 5061:5601
 ```
+
+Then, you can access Kibana through `kibana.$EXTERNAL_IP.nip.io`
 
 Login to Kibana with:
 
