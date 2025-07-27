@@ -5,4 +5,7 @@ image:
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
 
+ingress:
+  host: 34.126.114.91.nip.io
+
 namespace: "model-serving"

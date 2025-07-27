@@ -9,7 +9,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: 34.87.107.6.nip.io  # You can also use "34.123.248.115.nip.io", please refer to https://github.com/GoogleCloudPlatform/community/blob/master/archived/nginx-ingress-gke/index.md
+  - host: {{ .Values.ingress.host }}  # You can also use "34.123.248.115.nip.io", please refer to https://github.com/GoogleCloudPlatform/community/blob/master/archived/nginx-ingress-gke/index.md
     http:
       paths:
       - path: /docs
