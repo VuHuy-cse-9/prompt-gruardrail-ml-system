@@ -17,7 +17,7 @@ networkPolicy:
 tag: ""
 
 nameOverride: ""
-fullnameOverride: "jaeger"
+# fullnameOverride: "jaeger"
 
 allInOne:
   enabled: true
@@ -63,23 +63,22 @@ allInOne:
     # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
     # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
     ingressClassName: nginx
-    annotations:
-      kubernetes.io/ingress.class: "nginx"
-    labels: {}
+    # annotations: {}
+    # labels: {}
     # Used to create an Ingress record.
     hosts:
-      - chart-example.local
-    # annotations:
-    #   kubernetes.io/ingress.class: nginx
-    #   kubernetes.io/tls-acme: "true"
-    # labels:
-    #   app: jaeger
+      - jaeger.local
+    annotations:
+      kubernetes.io/ingress.class: nginx
+      kubernetes.io/tls-acme: "true"
+    labels:
+      app: jaeger
     # tls:
     #   # Secrets must be manually created in the namespace.
     #   - secretName: chart-example-tls
     #     hosts:
     #       - chart-example.local
-    pathType:
+    pathType: Prefix
   resources:
     limits:
       cpu: 500m
@@ -379,7 +378,7 @@ ingester:
 agent:
   podSecurityContext: {}
   securityContext: {}
-  enabled: true
+  enabled: false
   annotations: {}
   image:
     registry: ""
@@ -461,7 +460,7 @@ agent:
 collector:
   podSecurityContext: {}
   securityContext: {}
-  enabled: true
+  enabled: false
   annotations: {}
   image:
     registry: ""
@@ -631,7 +630,7 @@ collector:
     #   customRules: []
 
 query:
-  enabled: true
+  enabled: false
   basePath: /
   initContainers: []
   oAuthSidecar:
