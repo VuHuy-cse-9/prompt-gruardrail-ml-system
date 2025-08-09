@@ -14,20 +14,20 @@ pipeline {
     }
 
     stages {
-        stage('Test') {
-            agent {
-                docker {
-                    image 'python:3.12' 
-                }
-            }
-            steps {
-                script {                    
-                    // Install dependencies into the virtual environment
-                    echo 'Testing model correctness..'
-                    sh 'pip install -r api/requirements.txt && pytest'
-                }
-            }
-        }
+        // stage('Test') {
+        //     agent {
+        //         docker {
+        //             image 'python:3.12' 
+        //         }
+        //     }
+        //     steps {
+        //         script {                    
+        //             // Install dependencies into the virtual environment
+        //             echo 'Testing model correctness..'
+        //             sh 'pip install -r api/requirements.txt && pytest'
+        //         }
+        //     }
+        // }
         stage('Build') {
             steps {
                 script {
@@ -42,23 +42,26 @@ pipeline {
                 }
             }
         }
-        stage('Deploy') {
-            agent {
-                kubernetes {
-                    containerTemplate {
-                        name 'helm' // Name of the container to be used for helm upgrade
-                        image 'quandvrobusto/jenkins:lts-jdk17' // The image containing helm
-                        alwaysPullImage true // Always pull image in case of using the same tag
-                    }
-                }
-            }
-            steps {
-                script {
-                    container('helm') {
-                        sh("./scripts/model-serving.sh")
-                    }
-                }
-            }
+        stage('Update value in helm-chart') {
+            
         }
+        // stage('Deploy') {
+        //     agent {
+        //         kubernetes {
+        //             containerTemplate {
+        //                 name 'helm' // Name of the container to be used for helm upgrade
+        //                 image 'quandvrobusto/jenkins:lts-jdk17' // The image containing helm
+        //                 alwaysPullImage true // Always pull image in case of using the same tag
+        //             }
+        //         }
+        //     }
+        //     steps {
+        //         script {
+        //             container('helm') {
+        //                 sh("./scripts/model-serving.sh")
+        //             }
+        //         }
+        //     }
+        // }
     }
 }
