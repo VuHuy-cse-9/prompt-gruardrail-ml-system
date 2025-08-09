@@ -2,7 +2,7 @@
 // which can be accessed by var.project_id
 variable "project_id" {
   description = "The project ID to host the cluster in"
-  default     = "tidy-scholar-458913-v7"
+  default     = "airy-decorator-468500-b0"
 }
 
 variable "region" {

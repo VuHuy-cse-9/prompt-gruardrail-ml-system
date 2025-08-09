@@ -6,6 +6,6 @@ image:
   tag: "latest"
 
 ingress:
-  host: 34.126.114.91.nip.io
+  host: app.huy-fsds.info.pro.vn
 
 namespace: "model-serving"

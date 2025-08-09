@@ -25,7 +25,7 @@ resource "google_container_cluster" "primary" {
   initial_node_count = var.cluster_node_count
 
   node_config {
-    disk_size_gb = 80
+    disk_size_gb = 100
     machine_type = "e2-standard-2"
   }
 
@@ -59,15 +59,15 @@ resource "google_container_cluster" "primary" {
 #   }
 # }
 
-resource "google_compute_firewall" "default" {
-    name =  "allow-jenkins"
-    network = "default"
-    description = "Create Firewall allow rules for accessing Jenkins"
+# resource "google_compute_firewall" "default" {
+#     name =  "allow-jenkins"
+#     network = "default"
+#     description = "Create Firewall allow rules for accessing Jenkins"
 
-    allow {
-        protocol = "tcp"
-        ports = [8081, 50000]
-    }
+#     allow {
+#         protocol = "tcp"
+#         ports = [8081, 50000]
+#     }
 
-    source_ranges = ["0.0.0.0/0"]
-}
+#     source_ranges = ["0.0.0.0/0"]
+# }
