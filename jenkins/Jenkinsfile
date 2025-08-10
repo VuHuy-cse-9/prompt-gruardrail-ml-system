@@ -1,6 +1,7 @@
 // Github repo
 def app_config_repo = "https://github.com/VuHuy-cse-9/prompt-gruardrail-serving-model.git"
 def app_config_branch = 'argocd'
+def github_credential_id = '8122721f-a588-46cc-b2c7-2a22eb80fc6f'  
 
 // Helm
 def helm_repo = "prompt-gruardrail-serving-model"
@@ -10,6 +11,8 @@ def helm_value_file = 'helm/prompt-guardrail/values.yaml'
 def version = "v1.${BUILD_NUMBER}"
 
 def docker_build_command = "api/."
+
+
 
 pipeline {
     agent any
@@ -26,9 +29,6 @@ pipeline {
         docker_registry = "https://index.docker.io/v1/"
         docker_image_name = 'vnminhhuy2001/prompt-guardrail-service'
         docker_credentials_id = '5ed17986-fa3b-4a9d-978d-73601852a852'   
-
-        // Github
-        github_credential_id = '8122721f-a588-46cc-b2c7-2a22eb80fc6f'  
 
     }
 
@@ -63,18 +63,10 @@ pipeline {
         stage('Update value in helm-chart') {
             steps {
                 withCredentials([usernamePassword(
-                    credentialsId: "${github_credential_id}", 
+                    credentialsId: github_credential_id,
                     passwordVariable: 'GIT_USERNAME', 
                     usernameVariable: 'GIT_PASSWORD')]) {
                     sh """#!/bin/bash
-
-                    echo "Updating Helm chart configuration"
-                    echo "Password: $GIT_PASSWORD"
-                    echo "Username: $GIT_USERNAME"
-
-                    echo "Configuring Git..."
-                    git config --global user.email "jenkins@example.com"
-                    git config --global user.name "Jenkins CI SA"
 
                     echo "Cloning repo..."
                     git clone https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/VuHuy-cse-9/prompt-gruardrail-serving-model.git --branch ${app_config_branch}
