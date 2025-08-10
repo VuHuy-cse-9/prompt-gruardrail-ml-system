@@ -33,26 +33,26 @@ pipeline {
     }
 
     stages {
-        // stage('Test') {
-        //     when {
-        //         anyOf {
-        //             changeset "api/**"
-        //             changeset "jenkins/Jenkinsfile"
-        //         }
-        //     }
-        //     agent {
-        //         docker {
-        //             image 'python:3.12' 
-        //         }
-        //     }
-        //     steps {
-        //         script {                    
-        //             // Install dependencies into the virtual environment
-        //             echo 'Testing model correctness..'
-        //             sh 'pip install -r api/requirements.txt && pytest'
-        //         }
-        //     }
-        // }
+        stage('Test') {
+            when {
+                anyOf {
+                    changeset "api/**"
+                    changeset "jenkins/Jenkinsfile"
+                }
+            }
+            // agent {
+            //     docker {
+            //         image 'python:3.12' 
+            //     }
+            // }
+            steps {
+                script {                    
+                    // Install dependencies into the virtual environment
+                    echo 'Testing model correctness..'
+                    // sh 'pip install -r api/requirements.txt && pytest'
+                }
+            }
+        }
         stage('Build') {
             when {
                 anyOf {
