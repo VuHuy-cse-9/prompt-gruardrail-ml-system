@@ -1,5 +1,5 @@
 // Github repo
-def app_config_repo = "https://github.com/VuHuy-cse-9/prompt-gruardrail-serving-model"
+def app_config_repo = "https://github.com/VuHuy-cse-9/prompt-gruardrail-serving-model.git"
 def app_config_branch = 'argocd'
 
 // Helm
