@@ -8,7 +8,7 @@ def helm_value_file = 'helm/prompt-guardrail/values.yaml'
 // Docker image version 
 def version = "v1.${BUILD_NUMBER}"
 
-docker_build_command = "api/."
+def docker_build_command = "api/."
 
 pipeline {
     agent any
@@ -61,20 +61,18 @@ pipeline {
         }
         stage('Update value in helm-chart') {
             steps {
-                script {
+                withCredentials([usernamePassword(
+                    credentialsId: "${github_credential_id}", 
+                    passwordVariable: 'GIT_USERNAME', 
+                    usernameVariable: 'GIT_PASSWORD')]) {
+                    sh """#!/bin/bash
+                    
                     echo "Updating Helm chart configuration"
-                    withCredentials([usernamePassword(
-                        credentialsId: "${github_credential_id}", 
-                        passwordVariable: 'GIT_USERNAME', 
-                        usernameVariable: 'GIT_PASSWORD')]) {
-                            
-                        ss """
-                        echo "Password: $GIT_PASSWORD"
-                        echo "Username: $GIT_USERNAME"
-                        """
+                    echo "Password: $GIT_PASSWORD"
+                    echo "Username: $GIT_USERNAME"
+                    """
 
-                        
-                    }
+                    
                 }
             }
         }
