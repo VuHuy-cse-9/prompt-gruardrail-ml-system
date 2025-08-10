@@ -35,39 +35,39 @@ resource "google_container_cluster" "primary" {
 
 
 # // Jenkins
-# resource "google_compute_instance" "vm_instance" {
-#   name         = "minhhuyjenkins"
-#   machine_type = "e2-standard-4"
-#   zone         = var.zone
+resource "google_compute_instance" "vm_instance" {
+  name         = "minhhuyjenkins"
+  machine_type = "e2-standard-4"
+  zone         = var.zone
 
-#   // This instances use ubuntu image
-#   boot_disk {
-#     initialize_params {
-#       image = "ubuntu-os-cloud/ubuntu-2204-lts"
-#       size = 50
-#     }
-#   }
+  // This instances use ubuntu image
+  boot_disk {
+    initialize_params {
+      image = "ubuntu-os-cloud/ubuntu-2204-lts"
+      size = 50
+    }
+  }
 
-#   // Default network for the instance
-#   network_interface {
-#     network = "default"
-#     access_config {}
-#   }
+  // Default network for the instance
+  network_interface {
+    network = "default"
+    access_config {}
+  }
 
-#   metadata = {
-#     ssh-keys = var.ssh_keys
-#   }
-# }
+  metadata = {
+    ssh-keys = var.ssh_keys
+  }
+}
 
-# resource "google_compute_firewall" "default" {
-#     name =  "allow-jenkins"
-#     network = "default"
-#     description = "Create Firewall allow rules for accessing Jenkins"
+resource "google_compute_firewall" "default" {
+    name =  "allow-jenkins"
+    network = "default"
+    description = "Create Firewall allow rules for accessing Jenkins"
 
-#     allow {
-#         protocol = "tcp"
-#         ports = [8081, 50000]
-#     }
+    allow {
+        protocol = "tcp"
+        ports = [8081, 50000]
+    }
 
-#     source_ranges = ["0.0.0.0/0"]
-# }
+    source_ranges = ["0.0.0.0/0"]
+}

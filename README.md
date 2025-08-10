@@ -72,6 +72,11 @@ gcloud auth application-default login
 
 ### Provisioning Steps
 
+Before provisioning resources, edit these information in 
+1. project_id: Change default value with you google cloud project-id.
+2. ssh_keys: Generate your news ssh keys, replace the default value with your public key. This parameter uses for connectin ssh to VM from you local machine. (huyvu2001 is username, change it too!)
+
+Then, provisioning your cloud resources.
 ```bash
 cd iac/terraform
 terraform init
@@ -185,10 +190,31 @@ Automate build, test, and deployment processes with Jenkins integrated into your
 
 ### a. Install Jenkins
 
+Replace the domain below with your Jenkins public IP address.
+
 ```bash
-ssh huyvu2001@35.247.183.230
+ssh huyvu2001@jenkins.huy-fsds.info.pro.vn
+```
+
+Installing docker cli with below command
+```
+curl https://get.docker.com > dockerinstall && chmod 777 dockerinstall && ./dockerinstall
+```
+
+You may need to follow those post processing steps from this link: [docker/post-process](https://docs.docker.com/engine/install/linux-postinstall/)
+
+Create a new file docker-compose.yml with that at `jenkins/docker-compose.yml`, then run:
+```
 docker compose up -d
 ```
+
+Access you jenkins through your VM public IP Address: `jenkins.huy-fsds.info.pro.vn:8081`. The default username is admin, and run the below command to get your password:
+```
+docker exec -it jenkins /bin/bash
+cat /var/jenkins_home/secrets/initialAdminPassword
+```
+
+After login, click install suggested plugins to complete you setup.
 
 ### b. Connect Jenkins to GKE
 
