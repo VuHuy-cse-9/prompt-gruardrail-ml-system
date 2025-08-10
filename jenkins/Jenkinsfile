@@ -86,7 +86,7 @@ pipeline {
                     git commit -m "Update Helm chart with new image version ${version}"
 
                     echo "Pushing changes to remote repository..."
-                    git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/VuHuy-cse-9/prompt-gruardrail-serving-model.git
+                    git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/VuHuy-cse-9/prompt-gruardrail-serving-model.git HEAD:${app_config_branch}
 
                     echo "Clean up..."
                     cd ..
