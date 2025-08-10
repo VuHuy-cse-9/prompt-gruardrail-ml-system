@@ -3,7 +3,7 @@ image:
   # This sets the pull policy for images.
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "v1.85"
+  tag: "v1.86"
 
 ingress:
   host: app.huy-fsds.info.pro.vn
