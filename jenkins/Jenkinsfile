@@ -10,7 +10,7 @@ pipeline {
 
     environment{
         registry = 'vnminhhuy2001/prompt-guardrail-service'
-        registryCredential = 'docker-hub-credentials'      
+        registryCredential = 'docker-credentials'      
     }
 
     stages {
@@ -42,9 +42,9 @@ pipeline {
                 }
             }
         }
-        stage('Update value in helm-chart') {
+        // stage('Update value in helm-chart') {
             
-        }
+        // }
         // stage('Deploy') {
         //     agent {
         //         kubernetes {
