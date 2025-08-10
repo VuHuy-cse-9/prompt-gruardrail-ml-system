@@ -40,11 +40,11 @@ pipeline {
                     changeset "jenkins/Jenkinsfile"
                 }
             }
-            // agent {
-            //     docker {
-            //         image 'python:3.12' 
-            //     }
-            // }
+            agent {
+                docker {
+                    image 'python:3.12' 
+                }
+            }
             steps {
                 script {                    
                     // Install dependencies into the virtual environment

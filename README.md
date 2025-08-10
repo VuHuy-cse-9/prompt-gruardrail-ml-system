@@ -109,6 +109,8 @@ Deploy services to a GKE Cluster with organized namespaces, ensuring a productio
 - 📈 **monitoring**: Observability tools.
 - 🌐 **nginx-system**: Ingress controller.
 - 📊 **logging**: Logging stack.
+- **cert-manager**: Cert manager app.
+- **argocd**: ArgoCD manages CD pipeline.
 
 ### a. Deploy NGINX Ingress
 
@@ -122,6 +124,13 @@ Then, run the script below to get the nginx service IP address
 source ./scripts/nginx-system-ip.sh
 ```
 Save the external ip somewhere to access to other service.
+
+### b. Deploying Cert Manager app
+Overview: Cert-manager is a service that manages SSL certificate, solves SSL challenge from Let's Encrypt and so on.
+```bash
+kubectl create namespace cert-manager
+./scripts/cert-manager.sh
+```
 
 ### b. Deploy Prompt Guardrail Service
 
