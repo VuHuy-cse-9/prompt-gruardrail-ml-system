@@ -42,7 +42,7 @@ crds:
 global:
   # -- Default domain used by all components
   ## Used for ingresses, certificates, SSO, notifications, etc.
-  domain: argocd.huy-fsds.info.pro.vn
+  domain: argocd.example.com
 
   # -- Runtime class name for all components
   runtimeClassName: ""
@@ -2402,6 +2402,7 @@ server:
     ## Ref: https://argo-cd.readthedocs.io/en/stable/operator-manual/ingress/#option-1-ssl-passthrough
     annotations:
       kubernetes.io/ingress.class: nginx
+      cert-manager.io/cluster-issuer: "letsencrypt-stage"
       # nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
       # nginx.ingress.kubernetes.io/ssl-passthrough: "true"
 
@@ -2410,7 +2411,7 @@ server:
 
     # -- Argo CD server hostname
     # @default -- `""` (defaults to global.domain)
-    hostname: "argocd.huy-fsds.info.pro.vn"
+    hostname: ""
 
     # -- The path to Argo CD server
     path: /
@@ -2426,7 +2427,7 @@ server:
     # -- The list of additional hostnames to be covered by ingress record
     # @default -- `[]` (See [values.yaml])
     extraHosts: []
-      # - name: argocd.example.com
+      # - name: argocd.huy-fsds.info.pro.vn
       #   path: /
 
     # -- Additional ingress paths
@@ -2444,23 +2445,24 @@ server:
     # -- Additional ingress rules
     # @default -- `[]` (See [values.yaml])
     ## Note: Supports use of custom Helm templates
-    extraRules: []
-      # - http:
-      #     paths:
-      #     - path: /
-      #       pathType: Prefix
-      #       backend:
-      #         service:
-      #           name: '{{ include "argo-cd.server.fullname" . }}'
-      #           port:
-      #             name: '{{ .Values.server.service.servicePortHttpsName }}'
+    extraRules:
+      - host: argocd.huy-fsds.info.pro.vn
+        http:
+          paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: '{{ include "argo-cd.server.fullname" . }}'
+                port:
+                  name: '{{ .Values.server.service.servicePortHttpsName }}'
 
     # -- Additional TLS configuration
     # @default -- `[]` (See [values.yaml])
-    extraTls: []
-      # - hosts:
-      #   - argocd.example.com
-      #   secretName: your-certificate-name
+    extraTls:
+      - hosts:
+        - argocd.huy-fsds.info.pro.vn
+        secretName: argocd-server-tls-letsencrypt
 
     # AWS specific options for Application Load Balancer
     # Applies only when `serv.ingress.controller` is set to `aws`

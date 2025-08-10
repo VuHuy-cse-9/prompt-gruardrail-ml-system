@@ -109,6 +109,8 @@ Deploy services to a GKE Cluster with organized namespaces, ensuring a productio
 - 📈 **monitoring**: Observability tools.
 - 🌐 **nginx-system**: Ingress controller.
 - 📊 **logging**: Logging stack.
+- 📈 **cert-manager**: Cert manager app.
+- 📦 **argocd**: ArgoCD manages CD pipeline.
 
 ### a. Deploy NGINX Ingress
 
@@ -121,7 +123,24 @@ Then, run the script below to get the nginx service IP address
 ```
 source ./scripts/nginx-system-ip.sh
 ```
-Save the external ip somewhere to access to other service.
+
+After this steps, we would go to Vietnix, set the DNS record with IP address. If you have domain (and you should to work with our project), you should do that too.
+![](assets/vietnix-dns.png)
+
+### b. Deploying Cert Manager app
+__Overview__: Cert-manager is a service that manages SSL certificate, solves SSL challenge from Let's Encrypt and so on. Before start the service, we create all other service's namespaces, since we would create Certificate object for each namespace.
+
+```bash
+# Create namespace
+kubectl create namespace model-serving
+kubectl create namespace monitoring
+kubectl create namespace logging
+kubectl create namespace argocd
+
+# Start the service
+kubectl create namespace cert-manager
+./scripts/cert-manager.sh
+```
 
 ### b. Deploy Prompt Guardrail Service
 
@@ -130,7 +149,29 @@ kubectl create namespace model-serving
 ./scripts/model-serving.sh
 ```
 
-Then, you can access your service through `app.$EXTERNAL_IP.nip.io`
+If the Certificate in a namepsace issues certificate successfully, it's READY should be "True"
+```bash
+# Check certificate in model-serving
+kubectl get Certificate --namespace model-serving
+
+# Result
+NAME                               READY   SECRET                             AGE
+prompt-guardrail-tls-certificate   True    prompt-guardrail-tls-certificate   160m
+```
+
+The secret that goes along with the Certificate contains SSL certificate and its private key. In each of the service's ingress object, they would reference this secret to do TLS termination.
+
+```yaml
+# helm/prompt-guardrail/templates/nginx-ingress.yaml
+...
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+      - {{ .Values.ingress.host }}
+    secretName: prompt-guardrail-tls-certificate
+...
+```
 
 ### c. Deploy Otel Collector
 
@@ -139,107 +180,202 @@ Then, you can access your service through `app.$EXTERNAL_IP.nip.io`
 ```
 
 ### d. Deploy Prometheus Stack
-
+Overview: Prometheus is a metrics collector, and Grafana is a metrics visualizer. We would use Prometheus to collect metrics from our app, and Grafana to visualize them. After running this script, it would deploy Prometheus, Grafana, and Node Exporter (a system metrics exporter).
 ```bash
 kubectl create namespace monitoring
 ./scripts/prometheus-stack.sh
 ```
 
-
-### e. Access Grafana
-
-You can access grafana through `grafana.$EXTERNAL_IP.nip.io`
-
+You can access grafana through `https://grafana.huy-fsds.info.pro.vn`. The account should be:
 - Username: `huyvu`
 - Password: `huyvu_grafana_2025`
+You can change the username and password in the script above at `helm/kube-promtheus-stack/values.yaml:`
+```yaml
+grafana:
+    adminUser: huyvu
+    adminPassword: huyvu_grafana_2025
+```
+
+![](assets/grafana.png)
 
 ### f. Deploy Jaeger
-
+Overview: In this probject, we use Jaeger in all-in-one mode, where traces are stored in memory. This is suitable for development and testing purposes, but not recommended for production use.
 ```bash
 ./scripts/jaeger.sh
 ```
 
-Then, you can access Jaeger UI through `jaeger.$EXTERNAL_IP.nip.io`
+Then, you can access Jaeger UI through `https://jaeger.huy-fsds.info.pro.vn`. No authentication is required.
+
+![](assets/jaeger.png)
 
 ### g. Elasticsearch Stack
+Overview: ELK stack is a set of tools for logging and searching logs. It includes Elasticsearch, Kibana, and Filebeat. We would use Filebeat to collect logs from our app, and Elasticsearch to store them. Kibana is used to visualize the logs.
 
+In the folder `scripts/ELK`, we have the scripts to deploy Elasticsearch, Kibana, and Filebeat. The script would create a secret named `elasticsearch-credentials` in the `logging` namespace, which contains the password for the `elastic` user.
 ```bash
-kubectl create namespace logging
+# Deploy Elasticsearch
 ./scripts/ELK/elasticsearch.sh
+
+# Get Elasticsearch password
 kubectl get secret elasticsearch-credentials -n logging -o jsonpath='{.data.password}' | base64 --decode
-./scripts/ELK/kibana.sh
+
+# Deploy Filebeat
 ./scripts/ELK/filebeat.sh
+
+# Deploy Kibana
+./scripts/ELK/kibana.sh
 ```
 
-Then, you can access Kibana through `kibana.$EXTERNAL_IP.nip.io`
-
-Login to Kibana with:
-
-- Username: `elastic`
-- Password: (retrieved earlier)
-
-Run service requests and search `predict` in Kibana logs.
-
-
+Then, you can access Kibana through `https://kibana.huy-fsds.info.pro.vn`. The default username is `elastic`, and the password is the one you retrieved earlier from the secret.
+![](assets/elasticsearch.jpeg)
 
 ---
 
-## 🔄 5. Setup CI/CD
+## 🔄 5. Setup CI
 
-Automate build, test, and deployment processes with Jenkins integrated into your GKE cluster.
+Overview: We would deploy Jenkins on a VM, and use it to test, build, and update Helm Chart for our app. Jenkins would be configured to pull source code from GitHub, build Docker image, and push it to a private registry. Then, it would update the Helm Chart with the new image tag, and ArgoCD would automatically synchronize with the new Helm Chart. 
 
-### a. Install Jenkins
+### a. Install Jenkins on VM
 
-Replace the domain below with your Jenkins public IP address.
+First, connect ssh to your VM. Replace the domain below with your Jenkins public IP address.
 
 ```bash
 ssh huyvu2001@jenkins.huy-fsds.info.pro.vn
 ```
 
-Installing docker cli with below command
+Since we deploy Jenkins by docker, installing docker cli with below command
 ```
 curl https://get.docker.com > dockerinstall && chmod 777 dockerinstall && ./dockerinstall
 ```
 
-You may need to follow those post processing steps from this link: [docker/post-process](https://docs.docker.com/engine/install/linux-postinstall/)
-
-Create a new file docker-compose.yml with that at `jenkins/docker-compose.yml`, then run:
+Create a new file docker-compose.yml from that at `jenkins/docker-compose.yml`. In this docker compose, we use a docker image, built from jenkins/Dockerfile, which has installed docker-cli. We also mount the docker daemon socket to the container, so that Jenkins can use the docker CLI to build and push Docker images:
 ```
 docker compose up -d
 ```
 
-Access you jenkins through your VM public IP Address: `jenkins.huy-fsds.info.pro.vn:8081`. The default username is admin, and run the below command to get your password:
-```
+Access you jenkins through your VM public IP Address. In my case, I would create a A DNS record, and access it through `jenkins.huy-fsds.info.pro.vn:8081`. 
+
+
+Jenkins requires you to authenticate. The default username is `admin`, and run the below command to get your password:
+```bash
 docker exec -it jenkins /bin/bash
 cat /var/jenkins_home/secrets/initialAdminPassword
 ```
 
+Then, configuring the new public access key to your github account follow this tutorial: [Adding a new SSH key to your GitHub account](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account)
+
+
 After login, click install suggested plugins to complete you setup.
 
-### b. Connect Jenkins to GKE
+Then, you need to do the following plugins. Go to Manage Jenkins → Manage Plugins → Available, and search for the following plugins:
+- Git plugin.
+- Docker pipeline: Use for building the docker image.
 
+
+### b. Setup Webhooks
+Go to your github repository, Settings -> Webhooks → Add webhook
+1. Payload URL: `http://jenkins.huy-fsds.info.pro.vn:8081/github-webhook/`
+2. Content type: `application/json`
+3. Select events: `Let me select individual events.` and check `Pull request`, `Push`, `Branch or tag creation`, `Branch or tag deletion`.
+
+If you want to test the webhook, you can push a commit to your repository, and check the webhook delivery status in GitHub. It should return a 200 OK status.
+
+![](assets/github-webhook.png)
+
+### c. Create Github Access Token
+Go to your GitHub account, Settings → Developer settings → Personal access tokens → Tokens (classic) → Generate new token
+1. Note: Give your token a name.
+2. Expiration: Set the expiration date for your token.
+3. Select scopes: Check `repo` and `workflow` scopes.
+4. Click Generate token.
+
+Copy the generated token, and save it in a safe place. You would need this token to authenticate Jenkins to pull source code from your GitHub repository.
+
+### d. Create Docker Access Token & Jenkins Docker Credentials
+If you use a private Docker registry, you need to create an access token to authenticate Jenkins to pull and push Docker images. The steps to create a Docker access token depend on the registry you are using. Save the token in a safe place, as you would need it to configure Jenkins.
+
+Go to Jenkins → Manage Jenkins → Manage Credentials → System → Global credentials (unrestricted) → Add Credentials
+1. Kind: Username with password.
+2. Scope: Global.
+3. Username: Your Docker registry username.
+4. Password: Your Docker access token.
+
+### e. Create SSH Github Access token & Jenkins SSH Credentials
+If you want Jenkins to be able to push changes back to your GitHub repository, you need to create an SSH access token. This is the same SSH key you created earlier. You need to add the public key to your GitHub account, and configure Jenkins to use the private key.
+
+To generate the private key, you can use the command below:
+Create a ssh key using the command below:
 ```bash
-kubectl create ns model-serving
-kubectl create clusterrolebinding model-serving-admin-binding --clusterrole=admin --serviceaccount=model-serving:default --namespace=model-serving
-kubectl create clusterrolebinding anonymous-admin-binding --clusterrole=admin --user=system:anonymous --namespace=model-serving
+ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
 ```
 
-### c. Create CI/CD Pipeline
+Create a public SSH key on github hub follow this tutorial: [Connecting to GitHub with SSH](https://docs.github.com/en/authentication/connecting-to-github-with-ssh).
 
-- Create GitHub token.
-- Set up Jenkins Multibranch Pipeline.
-- Configure GitHub Webhook:
+Then, go to Jenkins → Manage Jenkins → Manage Credentials → System → Global credentials (unrestricted) → Add Credentials
+1. Kind: SSH Username with private key.
+2. Scope: Global.
+3. Username: Your GitHub username.
+4. Private Key: Enter directly, and paste your private key.
 
+### f. Create Jenkins Multibranch Pipeline
+Go to Jenkins → New Item → Multibranch Pipeline
+1. Name: Your pipeline name.
+2. Branch Sources: Add a new github branch source, you would require to enter your GitHub repository URL and Github credentials (you can create a new one with your GitHub access token).
+3. Build Configuration: change path Jenkins file to `jenkins/Jenkinsfile`.
+4. Properties: Add Docker credentials, which you created earlier, and SSH credentials.
+5. Save your pipeline.
+
+![](assets/jenkins-multibranch-pipeline.png)
+
+Push a commit to your repository, and Jenkins would automatically detect the changes, and start building your pipeline. You can check the build status in Jenkins.
+
+(*) Comment: When creating Credentials, name the Credential ID since you would reference it in your Jenkinsfile.
+Here we set our credential ids as:
+- `github-private-key`: SSH private key for GitHub.
+- `dockerhub-credentials`: Docker credentials for private registry.
+
+### c. Create CD Pipeline with ArgoCD
+
+Overview: In this section, we would discuss how to connect ArgoCD to our repository, and synchronize with our app.
+
+Run the script below to deploy ArgoCD:
 ```bash
-http://<VM_External_IP>:8081/github-webhook/
+./scripts/argocd.sh
 ```
 
-### d. Docker Credentials for Private Images
+Go to your ArgoCD UI, which is available at `https://argocd.huy-fsds.info.pro.vn`. The default username is `admin`, run the command below to get your password:
+```bash
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+```
 
-If using private Docker images, set up credentials in Jenkins:
+__Step 1: Connecting to a repository__: Go to settings → Repository → Connect Repo
 
-1. Create a Docker access token.
-2. Add credentials in Jenkins Global Credentials with ID `docker-hub-credentials`.
+1. Connection method: HTTP/HTTPS.
+2. Name: Repository name.
+3. Project: Default.
+4. Repository URL: https://github.com/VuHuy-cse-9/prompt-gruardrail-serving-model.git
+5. Password: Github Access Token.
+6. Click Create.
+
+__Step 2: Create an application__: Go to ArgoCD Applications → Create App
+
+1. Application name: You app name, this would be the same as release name.
+2. Project name: Default.
+3. Sync policy: there are two modes:
+    - Manual: When ArgoCD notices you app is different from that in Repo → Turn on a warning (For production stage).
+    - Auto-Sync: Automatically synchronize with you app (For development stage)
+4. Source:
+    - Repository URL: Save as above.
+    - Revision: Select branch that ArgoCD would synchronize with.
+    - Path: Path to Helm Chart Repo (It would automatically detect and recommend for you).
+5. Destination:
+    - Cluster URL: https://kubernetes.default.svc
+    - Namespace: Namespace that we would deploy the app.
+6. Other: It would let you select your value file name, and automatically detect you image tag.
+
+![](assets/argocd-app.png)
+
+After that, you would know whether your app has already been synced with that on repo, and ArgoCD would notice you.
 
 ---
 
