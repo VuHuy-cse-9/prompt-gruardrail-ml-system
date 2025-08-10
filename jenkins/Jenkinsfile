@@ -3,6 +3,7 @@ def app_config_repo = "https://github.com/VuHuy-cse-9/prompt-gruardrail-serving-
 def app_config_branch = 'argocd'
 
 // Helm
+def helm_repo = "prompt-gruardrail-serving-model"
 def helm_value_file = 'helm/prompt-guardrail/values.yaml'
 
 // Docker image version 
@@ -66,13 +67,33 @@ pipeline {
                     passwordVariable: 'GIT_USERNAME', 
                     usernameVariable: 'GIT_PASSWORD')]) {
                     sh """#!/bin/bash
-                    
+
                     echo "Updating Helm chart configuration"
                     echo "Password: $GIT_PASSWORD"
                     echo "Username: $GIT_USERNAME"
-                    """
 
+                    echo "Configuring Git..."
+                    git config --global user.email "jenkins@example.com"
+                    git config --global user.name "Jenkins CI SA"
+
+                    echo "Cloning repo..."
+                    git clone ${app_config_repo} --branch ${app_config_branch}
+                    cd ${helm_repo}
+                    sed -i 's|  tag: .*|  tag: "${version}"|' ${helm_value_file}
                     
+                    echo "Committing changes..."
+                    git add ${helm_value_file}
+                    git commit -m "Update Helm chart with new image version ${version}"
+
+                    echo "Pushing changes to remote repository..."
+                    git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/VuHuy-cse-9/prompt-gruardrail-serving-model.git
+
+                    echo "Clean up..."
+                    cd ..
+                    rm -rf ${helm_repo}
+
+                    echo "Helm chart updated successfully with new image version ${version}."
+                    """
                 }
             }
         }
