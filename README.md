@@ -325,7 +325,7 @@ Go to Jenkins → New Item → Multibranch Pipeline
 4. Properties: Add Docker credentials, which you created earlier, and SSH credentials.
 5. Save your pipeline.
 
-![](assets/jenkins-multibranch-pipeline.png)
+![](assets/Jenkins-pipeline-overview.png)
 
 Push a commit to your repository, and Jenkins would automatically detect the changes, and start building your pipeline. You can check the build status in Jenkins.
 
