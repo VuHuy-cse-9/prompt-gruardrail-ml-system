@@ -22,7 +22,7 @@ pipeline {
 
     environment{
         // Docker registry
-        docker_registry = "docker.io"
+        docker_registry = "https://index.docker.io/v1/"
         docker_image_name = 'vnminhhuy2001/prompt-guardrail-service'
         docker_credentials_id = '5ed17986-fa3b-4a9d-978d-73601852a852'     
 
@@ -47,7 +47,7 @@ pipeline {
             steps {
                 script {
                     echo 'Building image for deployment..'
-                    dockerImage = docker.build("${docker_image_name}", docker_build_command)
+                    def dockerImage = docker.build("${docker_image_name}", docker_build_command)
 
                     echo 'Pushing image to dockerhub..'
                     docker.withRegistry(docker_registry, docker_credentials_id ) {
