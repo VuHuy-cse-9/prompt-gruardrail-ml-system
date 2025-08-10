@@ -1,11 +1,11 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: prompt-guardrail-tls-certificate
-  namespace: model-serving
+  name: logging-server-tls
+  namespace: logging
 spec:
   # The secret where cert-manager will store the TLS cert and key
-  secretName: prompt-guardrail-tls-secret
+  secretName: logging-server-tls
 
   # Private key
   privateKey:
@@ -21,11 +21,7 @@ spec:
 
   # Domains to include in the certificate
   dnsNames:
-    - app.huy-fsds.info.pro.vn
-  
-
-  emailAddresses:
-    - huy.cse.9@gmail.com
+    - kibana.huy-fsds.info.pro.vn
 
   subject:
     organizations:

@@ -141,15 +141,15 @@ ingress:
   pathtype: ImplementationSpecific
   annotations:
     kubernetes.io/ingress.class: nginx
-    kubernetes.io/tls-acme: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-stage"
   hosts:
-    - host: kibana-example.local
+    - host: kibana.huy-fsds.info.pro.vn
       paths:
         - path: /
-  #tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
+  tls:
+   - secretName: logging-server-tls
+     hosts:
+       - kibana.huy-fsds.info.pro.vn
 
 readinessProbe:
   failureThreshold: 3

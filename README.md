@@ -193,9 +193,9 @@ Run service requests and search `predict` in Kibana logs.
 
 ---
 
-## 🔄 5. Setup CI/CD
+## 🔄 5. Setup CI
 
-Automate build, test, and deployment processes with Jenkins integrated into your GKE cluster.
+Automate build, test, and update Helm chart with Jenkins.
 
 ### a. Install Jenkins
 
@@ -223,32 +223,67 @@ docker exec -it jenkins /bin/bash
 cat /var/jenkins_home/secrets/initialAdminPassword
 ```
 
+Create a ssh key using the command below:
+```
+ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+
+```
+Then, configuring the new public access key to your github account follow this tutorial: [Adding a new SSH key to your GitHub account](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account)
+
+
 After login, click install suggested plugins to complete you setup.
 
-### b. Connect Jenkins to GKE
+Then, you need to do the following plugins:
+- Git plugin.
+- Docker pipeline: Use for building the docker image.
 
-```bash
-kubectl create ns model-serving
-kubectl create clusterrolebinding model-serving-admin-binding --clusterrole=admin --serviceaccount=model-serving:default --namespace=model-serving
-kubectl create clusterrolebinding anonymous-admin-binding --clusterrole=admin --user=system:anonymous --namespace=model-serving
-```
 
-### c. Create CI/CD Pipeline
+### c. Create CI pipeline
 
-- Create GitHub token.
-- Set up Jenkins Multibranch Pipeline.
-- Configure GitHub Webhook:
+TODO:
+[] Tạo github webhook.
+[] Tạo access token.
+[] Github Multibranch pipeline.
+[] Tạo pipeline trong đó:
+    [] Tạo Github Credentials: Để Jenkins có thể pull được source code mình về.
+    [] Tạo docker credentials: Để Jenkins có thể truy cập được docker image ở private registry.
+    [] Tạo SSH credentials: Để Jenkins có thể chỉnh sửa được code ở repo và post lại lại github.
 
-```bash
-http://<VM_External_IP>:8081/github-webhook/
-```
 
-### d. Docker Credentials for Private Images
+### c. Create CD Pipeline with ArgoCD
 
-If using private Docker images, set up credentials in Jenkins:
+**Overview**: In this section, we would discuss how can we connect ArgoCD to our repository, and synchronize with our app.
 
-1. Create a Docker access token.
-2. Add credentials in Jenkins Global Credentials with ID `docker-hub-credentials`.
+#### Step 1: Connecting to a repository
+
+Overview: Go to settings → Repository → Connect Repo
+
+1. Connection method: HTTP/HTTPS.
+2. Name: Repository name.
+3. Project: Default.
+4. Repository URL: https://github.com/VuHuy-cse-9/prompt-gruardrail-serving-model.git
+5. Password: Github Access Token.
+6. Click Create.
+
+#### Step 2: Create an application
+
+Overview: Go to ArgoCD Applications → Create App
+
+1. Application name: You app name, this would be the same as release name.
+2. Project name: Default.
+3. Sync policy: there are two modes:
+    - Manual: When ArgoCD notices you app is different from that in Repo → Turn on a warning (For production stage).
+    - Auto-Sync: Automatically synchronize with you app (For development stage)
+4. Source:
+    - Repository URL: Save as above.
+    - Revision: Select branch that ArgoCD would synchronize with.
+    - Path: Path to Helm Chart Repo (It would automatically detect and recommend for you).
+5. Destination:
+    - Cluster URL: https://kubernetes.default.svc
+    - Namespace: Namespace that we would deploy the app.
+6. Other: It would let you select your value file name, and automatically detect you image tag.
+
+After that, you would know whether your app has already been synced with that on repo, and ArgoCD would notice you.
 
 ---
 

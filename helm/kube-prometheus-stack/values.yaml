@@ -1311,7 +1311,7 @@ grafana:
     ##
     annotations:
       kubernetes.io/ingress.class: nginx
-      kubernetes.io/tls-acme: "true"
+      cert-manager.io/cluster-issuer: "letsencrypt-stage"
 
     ## Labels to be added to the Ingress
     ##
@@ -1321,7 +1321,7 @@ grafana:
     ## Must be provided if Ingress is enable.
     ##
     hosts:
-      - grafana.domain.com
+      - grafana.huy-fsds.info.pro.vn
     # hosts: []
 
     ## Path for grafana ingress
@@ -1330,10 +1330,10 @@ grafana:
     ## TLS configuration for grafana Ingress
     ## Secret must be manually created in the namespace
     ##
-    tls: []
-    # - secretName: grafana-general-tls
-    #   hosts:
-    #   - grafana.example.com
+    tls:
+      - secretName: monitoring-server-tls
+        hosts:
+        - grafana.huy-fsds.info.pro.vn
 
   # # To make Grafana persistent (Using Statefulset)
   # #
