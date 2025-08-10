@@ -77,7 +77,7 @@ pipeline {
                     git config --global user.name "Jenkins CI SA"
 
                     echo "Cloning repo..."
-                    git clone ${app_config_repo} --branch ${app_config_branch}
+                    git clone https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/VuHuy-cse-9/prompt-gruardrail-serving-model.git --branch ${app_config_branch}
                     cd ${helm_repo}
                     sed -i 's|  tag: .*|  tag: "${version}"|' ${helm_value_file}
                     
