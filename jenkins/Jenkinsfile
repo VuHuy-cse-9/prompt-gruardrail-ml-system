@@ -33,21 +33,33 @@ pipeline {
     }
 
     stages {
-        // stage('Test') {
-        //     agent {
-        //         docker {
-        //             image 'python:3.12' 
-        //         }
-        //     }
-        //     steps {
-        //         script {                    
-        //             // Install dependencies into the virtual environment
-        //             echo 'Testing model correctness..'
-        //             sh 'pip install -r api/requirements.txt && pytest'
-        //         }
-        //     }
-        // }
+        stage('Test') {
+            when {
+                anyOf {
+                    changeset "api/**"
+                    changeset "jenkins/Jenkinsfile"
+                }
+            }
+            agent {
+                docker {
+                    image 'python:3.12' 
+                }
+            }
+            steps {
+                script {                    
+                    // Install dependencies into the virtual environment
+                    echo 'Testing model correctness..'
+                    sh 'pip install -r api/requirements.txt && pytest'
+                }
+            }
+        }
         stage('Build') {
+            when {
+                anyOf {
+                    changeset "api/**"
+                    changeset "jenkins/Jenkinsfile"
+                }
+            }
             steps {
                 script {
                     echo 'Building image for deployment..'
@@ -61,6 +73,12 @@ pipeline {
             }
         }
         stage('Update value in helm-chart') {
+            when {
+                anyOf {
+                    changeset "api/**"
+                    changeset "jenkins/Jenkinsfile"
+                }
+            }
             steps {
                 withCredentials([sshUserPrivateKey(
                     credentialsId: github_private_key_id,
