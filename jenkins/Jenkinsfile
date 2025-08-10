@@ -1,7 +1,7 @@
 // Github repo
 def app_config_repo = "https://github.com/VuHuy-cse-9/prompt-gruardrail-serving-model.git"
 def app_config_branch = 'argocd'
-def github_credential_id = '8122721f-a588-46cc-b2c7-2a22eb80fc6f'  
+def github_private_key_id = 'github-private-key'  
 
 // Helm
 def helm_repo = "prompt-gruardrail-serving-model"
@@ -62,14 +62,17 @@ pipeline {
         }
         stage('Update value in helm-chart') {
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: github_credential_id,
-                    passwordVariable: 'GIT_USERNAME', 
-                    usernameVariable: 'GIT_PASSWORD')]) {
+                withCredentials([sshUserPrivateKey(
+                    credentialsId: github_private_key_id,
+                    keyFileVariable: 'GIT_SSH_KEY')]) {
                     sh """#!/bin/bash
 
                     echo "Cloning repo..."
-                    git clone https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/VuHuy-cse-9/prompt-gruardrail-serving-model.git --branch ${app_config_branch}
+                    chmod 600 $SSH_KEY_FILE
+                    export GIT_SSH_COMMAND="ssh -i $SSH_KEY_FILE -o StrictHostKeyChecking=no"
+
+
+                    git clone git@github.com:VuHuy-cse-9/prompt-gruardrail-serving-model.git --branch ${app_config_branch}
                     cd ${helm_repo}
                     sed -i 's|  tag: .*|  tag: "${version}"|' ${helm_value_file}
                     
@@ -78,7 +81,7 @@ pipeline {
                     git commit -m "Update Helm chart with new image version ${version}"
 
                     echo "Pushing changes to remote repository..."
-                    git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/VuHuy-cse-9/prompt-gruardrail-serving-model.git HEAD:${app_config_branch}
+                    git push origin ${app_config_branch}
 
                     echo "Clean up..."
                     cd ..
