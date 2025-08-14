@@ -3,4 +3,4 @@
 NAMESPACE="logging"
 
 echo "Creating service..."
-helm upgrade --install elasticsearch helm/ELK/elasticsearch -f helm/ELK/elasticsearch/my-values.yaml --namespace $NAMESPACE
+helm upgrade --install elasticsearch helm/elk_setting/elasticsearch -f helm/elk_setting/elasticsearch/my-values.yaml --namespace $NAMESPACE

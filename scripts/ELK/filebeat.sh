@@ -3,5 +3,5 @@
 NAMESPACE="logging"
 
 echo "Creating service..."
-helm upgrade --install filebeat helm/ELK/filebeat --namespace $NAMESPACE
+helm upgrade --install filebeat helm/elk_setting/filebeat --namespace $NAMESPACE
 
