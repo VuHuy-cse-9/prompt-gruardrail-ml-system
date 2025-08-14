@@ -5,7 +5,7 @@ def github_private_key_id = 'github-private-key'
 
 // Helm
 def helm_repo = "prompt-gruardrail-serving-model"
-def helm_value_file = 'helm/prompt-guardrail/values.yaml'
+def helm_value_file = 'helm_charts/prompt-guardrail/values.yaml'
 
 // Docker image version 
 def version = "v1.${BUILD_NUMBER}"

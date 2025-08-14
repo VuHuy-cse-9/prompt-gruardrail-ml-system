@@ -162,7 +162,7 @@ prompt-guardrail-tls-certificate   True    prompt-guardrail-tls-certificate   16
 The secret that goes along with the Certificate contains SSL certificate and its private key. In each of the service's ingress object, they would reference this secret to do TLS termination.
 
 ```yaml
-# helm/prompt-guardrail/templates/nginx-ingress.yaml
+# helm_charts/prompt-guardrail/templates/nginx-ingress.yaml
 ...
 spec:
   ingressClassName: nginx
@@ -189,7 +189,7 @@ kubectl create namespace monitoring
 You can access grafana through `https://grafana.huy-fsds.info.pro.vn`. The account should be:
 - Username: `huyvu`
 - Password: `huyvu_grafana_2025`
-You can change the username and password in the script above at `helm/kube-promtheus-stack/values.yaml:`
+You can change the username and password in the script above at `helm_charts/kube-promtheus-stack/values.yaml:`
 ```yaml
 grafana:
     adminUser: huyvu
