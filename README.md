@@ -125,7 +125,7 @@ source ./scripts/nginx-system-ip.sh
 ```
 
 After this steps, we would go to Vietnix, set the DNS record with IP address. If you have domain (and you should to work with our project), you should do that too.
-![](assets/vietnix-dns.png)
+![](assets/vietnix.png)
 
 ### b. Deploying Cert Manager app
 __Overview__: Cert-manager is a service that manages SSL certificate, solves SSL challenge from Let's Encrypt and so on. Before start the service, we create all other service's namespaces, since we would create Certificate object for each namespace.
@@ -280,7 +280,7 @@ Go to your github repository, Settings -> Webhooks → Add webhook
 
 If you want to test the webhook, you can push a commit to your repository, and check the webhook delivery status in GitHub. It should return a 200 OK status.
 
-![](assets/github-webhook.png)
+![](assets/github_webhook.png)
 
 ### c. Create Github Access Token
 Go to your GitHub account, Settings → Developer settings → Personal access tokens → Tokens (classic) → Generate new token
@@ -325,7 +325,7 @@ Go to Jenkins → New Item → Multibranch Pipeline
 4. Properties: Add Docker credentials, which you created earlier, and SSH credentials.
 5. Save your pipeline.
 
-![](assets/Jenkins-pipeline-overview.png)
+![](assets/jenkins.png)
 
 Push a commit to your repository, and Jenkins would automatically detect the changes, and start building your pipeline. You can check the build status in Jenkins.
 
@@ -373,7 +373,7 @@ __Step 2: Create an application__: Go to ArgoCD Applications → Create App
     - Namespace: Namespace that we would deploy the app.
 6. Other: It would let you select your value file name, and automatically detect you image tag.
 
-![](assets/argocd-app.png)
+![](assets/argocd.png)
 
 After that, you would know whether your app has already been synced with that on repo, and ArgoCD would notice you.
 
