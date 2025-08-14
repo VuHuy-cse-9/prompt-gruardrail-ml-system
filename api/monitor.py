@@ -17,33 +17,29 @@ from functools import wraps
 logger = logging.getLogger(__name__)
 
 load_dotenv()
-APP_SERVICE_NAME = os.getenv('SERVICE_NAME', 'default_service')
-OLTP_ENDPOINT = os.getenv('OLTP_ENDPOINT', 'localhost:4317')
-OLTP_INSECURE= os.getenv('OLTP_INSECURE', 'False').lower() == 'true'
-
-logger.info(f"Service Name: {APP_SERVICE_NAME}")
-logger.info(f"OTLP Endpoint: {OLTP_ENDPOINT}")
-logger.info(f"OTLP Insecure: {OLTP_INSECURE}")
+app_service_name = os.getenv('SERVICE_NAME', 'default_service')
+oltp_endpoint = os.getenv('OLTP_ENDPOINT', 'localhost:4317')
+oltp_insecure= os.getenv('OLTP_INSECURE', 'False').lower() == 'true'
 
 def setup_metric():
-    resource = resource=Resource.create({SERVICE_NAME: APP_SERVICE_NAME})
+    resource = resource=Resource.create({SERVICE_NAME: app_service_name})
 
     # Configure OpenTelemetry metrics exporter
     otlp_exporter = OTLPMetricExporter(
-        endpoint=os.path.join(OLTP_ENDPOINT, 'v1/metrics'), 
-        insecure= OLTP_INSECURE
+        endpoint=os.path.join(oltp_endpoint, 'v1/metrics'), 
+        insecure= oltp_insecure
     )
     reader = PeriodicExportingMetricReader(otlp_exporter, export_interval_millis=5000)
     meter_provider = MeterProvider(resource=resource, metric_readers=[reader])
     set_meter_provider(meter_provider)
 
 def setup_tracing():
-    resource = resource=Resource.create({SERVICE_NAME: APP_SERVICE_NAME})
+    resource = resource=Resource.create({SERVICE_NAME: app_service_name})
     set_tracer_provider(TracerProvider(resource=resource))
 
     oltp_exporter = OTLPSpanExporter(
-        endpoint=OLTP_ENDPOINT,
-        insecure= OLTP_INSECURE
+        endpoint=oltp_endpoint,
+        insecure= oltp_insecure
     )
 
     span_processor = BatchSpanProcessor(oltp_exporter)
