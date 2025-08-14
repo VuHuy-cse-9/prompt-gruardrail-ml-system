@@ -13,8 +13,6 @@ logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-classifer = None
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Load the ML model

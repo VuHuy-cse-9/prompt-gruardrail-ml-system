@@ -37,8 +37,6 @@ def setup_metric():
     meter_provider = MeterProvider(resource=resource, metric_readers=[reader])
     set_meter_provider(meter_provider)
 
-    return
-
 def setup_tracing():
     resource = resource=Resource.create({SERVICE_NAME: APP_SERVICE_NAME})
     set_tracer_provider(TracerProvider(resource=resource))
@@ -55,13 +53,11 @@ def setup_monitoring(app: FastAPI):
     setup_metric()
     setup_tracing()
     FastAPIInstrumentor.instrument_app(app, tracer_provider=get_tracer_provider(), meter_provider=get_meter_provider())
-    return 
 
 def remove_monitoring(app: FastAPI):
     FastAPIInstrumentor.uninstrument_app(app)
     get_tracer_provider().shutdown()
     get_meter_provider().shutdown()
-    return
 
 def trace(name, attributes=None):
     """
