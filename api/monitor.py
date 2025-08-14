@@ -22,7 +22,7 @@ oltp_endpoint = os.getenv('OLTP_ENDPOINT', 'localhost:4317')
 oltp_insecure= os.getenv('OLTP_INSECURE', 'False').lower() == 'true'
 
 def setup_metric():
-    resource = resource=Resource.create({SERVICE_NAME: app_service_name})
+    resource = Resource.create({SERVICE_NAME: app_service_name})
 
     # Configure OpenTelemetry metrics exporter
     otlp_exporter = OTLPMetricExporter(
