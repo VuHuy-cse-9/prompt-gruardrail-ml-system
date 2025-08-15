@@ -10,7 +10,6 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import get_tracer_provider, set_tracer_provider
 from opentelemetry.sdk.trace import TracerProvider
 from fastapi import FastAPI
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 import logging
 from functools import wraps
 
@@ -48,10 +47,8 @@ def setup_tracing():
 def setup_monitoring(app: FastAPI):
     setup_metric()
     setup_tracing()
-    FastAPIInstrumentor.instrument_app(app, tracer_provider=get_tracer_provider(), meter_provider=get_meter_provider())
 
 def remove_monitoring(app: FastAPI):
-    FastAPIInstrumentor.uninstrument_app(app)
     get_tracer_provider().shutdown()
     get_meter_provider().shutdown()
 
