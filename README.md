@@ -1,69 +1,82 @@
-# Prompt Guardrail Service
+# 🚀 Prompt Guardrail Service
 
-## Table of Contents
+## 📚 Table of Contents
 
-[1. System architecture with Kubernetes](#1-system-architecture-with-kubernetes-k8s)
+1. [🗺️ System Architecture with Kubernetes](#1-system-architecture-with-kubernetes)
+2. [🖥️ Local Deployment with Docker Compose](#2-local-deployment-with-docker-compose)
+3. [☁️ Provisioning Infrastructure on Google Cloud with Terraform](#3-provisioning-infrastructure-on-google-cloud-with-terraform)
+4. [📦 Deploying Service on GKE Cluster](#4-deploying-service-on-gke-cluster)
+5. [🔄 Setup CI/CD](#5-setup-cicd)
 
-[2. Local Deployment with docker compose](#2-local-deployment-with-docker-compose)
+---
 
-[3. Provisioning Infrastructure on Google Cloud with Terraform](#3-provisioning-infrastructure-on-google-cloud-with-terraform)
+## 🗺️ 1. System Architecture with Kubernetes
 
-[4. Deploying service on GKE cluster](#4-deploying-service-on-gke-cluster)
+Welcome to the architectural blueprint of our system! This section provides an overview of how we orchestrate services using Kubernetes, ensuring scalability, resilience, and observability.
 
-[5. Setup CI/CD](#5-setup-cicd)
+![](assets/mlops1_architecture.png)
 
 
-## 1. System architecture with Kubernetes
-![](assets/archi.png)
+---
 
-## 2. Local Deployment with docker compose
+## 🖥️ 2. Local Deployment with Docker Compose
 
-Create `.env` file in api, which is given in .env.example
-```
+Set up and test the Prompt Guardrail Service locally with Docker Compose. This enables developers to experience the full stack, including observability and logging tools, right from their workstation.
+
+### Step 1: Prepare Environment Variables
+
+Create a `.env` file in the `api` directory, based on `.env.example`:
+
+```env
 OLTP_ENDPOINT="grpc://otel-collector:4317"
-OLTP_INSECURE = true
+OLTP_INSECURE=true
 SERVICE_NAME="prompt_guardrail"
 ```
-Where:
-- `OLTP_ENDPOINT`: Our api service would push metrics & spans to Otel Collector using this URI. It send through port 4117 since we use gRPC. Since api service and Otel collector is in the same internal network, otel-collector, the name of otel collector's container, is used as a domain name.
 
-- `OLTP_INSECURE`: We don't SSL since they communicate within the same internal network (Same when we deploy on Kubernetes)
+### Step 2: Launch Services
 
-- `SERVICE_NAME`: Our api use SERVICE_NAME as an identity so that we can recognize when we view JaegerUI or Grafana.
-
-Launch docker compose
 ```bash
 docker compose up -d
 ```
 
-After this command, these services would be launched up:
-1. api: Our prompt guardrail service. The docker image is built using api/Dockerfile.
-2. otel-collector: Otel Collector service.
-3. jaeger: Jaeger, recieves spans from otel collector.
-4. prometheus: constantly grabs metrics exposed by Otel Collector.
-5. grafana: Query metrics from prometheus, exposes them to dashboard.
-6. node_exporter: Collect system metrics, exposes them to prometheus.
+### Step 3: Services Launched
 
-Now, we would discuss a little bit about how each service work:
-**api**: After this service is launched up, it would pull the model's checkpoint from my huggingface hub. The way I trained the model is discussed in notebook folder. After setting up, you can go to `http://localhost:12345/docs`, and try the service.
-**otel-collector**: I specify the otel-collector configuration in `monitoring/otel_collector/config.yaml`. In this file, I tell otel collector the URI of jaeger and the port that it should expose for promtheus to grab metrics.
-**jaeger**: No configration is required. After it starts up, you can go to `http://localhost:16686` to view it UI. The spans of api should show up after you do several query in api.
-**prometheus**: I configure prometheus to collect metrics from otel collector and node-exporter in `monitoring/prometheus/config.yml`.
-**grafana**: It's the place for you to visualize metrics collected from promtheus. 
+1. **api**: API service, available at `http://localhost:12345/docs`.
+2. **otel-collector**: Observability collector.
+3. **jaeger**: Trace visualizer at `http://localhost:16686`.
+4. **prometheus**: Metrics collector.
+5. **grafana**: Metrics visualization.
+6. **node\_exporter**: System metrics exporter.
 
-## 3. Provisioning Infrastructure on Google Cloud with Terraform
-Overview: In this step, you would provision Google Cloud infrastructure using Terraform. I have setup all the Terraform's configuration at iac/terraform folder.
+### Step 4: Launch Logging Server
 
-Before you begin, you should install **terraform** on your machine by following this [guide](https://computingforgeeks.com/how-to-install-terraform-on-ubuntu/).
+```bash
+cd elk
+docker-compose -f docker-compose.yml -f extensions/filebeat/filebeat-compose.yml up
+```
 
-After that, authenticate you google cloud account using below command:
+---
+
+## ☁️ 3. Provisioning Infrastructure on Google Cloud with Terraform
+
+This section walks you through provisioning cloud infrastructure on Google Cloud using Terraform. Automate your cloud setup with IaC best practices!
+
+### Prerequisites
+
+- Install **Terraform**: [Guide](https://computingforgeeks.com/how-to-install-terraform-on-ubuntu/)
+- Authenticate to Google Cloud:
+
 ```bash
 gcloud auth application-default login
 ```
 
-Since we need to ssh to Jenkins VM instance. Generate your public SSH key, and replace ssh_keys default value at `iac/terraform/variables.tf`. 
+### Provisioning Steps
 
-After everything is completed, run below code to provision you infrastructure.
+Before provisioning resources, edit these information in 
+1. project_id: Change default value with you google cloud project-id.
+2. ssh_keys: Generate your news ssh keys, replace the default value with your public key. This parameter uses for connectin ssh to VM from you local machine. (huyvu2001 is username, change it too!)
+
+Then, provisioning your cloud resources.
 ```bash
 cd iac/terraform
 terraform init
@@ -71,239 +84,302 @@ terraform plan
 terraform apply
 ```
 
-After this command, you would provision GKE to allocate:
-1. A Cluster with 3 nodes, each node is a e2-medium with 80GB disk size. These nodes locates at zone: asia-southeast1-a. 
-2. A Compute instance: e2-standard-4 for deploying Jenkins. 
-3. A firewall allow rules, so that we can access Jenkins from public IP.
+### Provisioned Resources
 
-Go to Google Cloud Console -> Kubernets Engine -> Cluster, you should see your cluster their. Connect to the cluster using the command below:
-```
+- ✅ GKE Cluster (3 nodes)
+- ✅ Jenkins VM
+- ✅ Firewall Rules
+
+### Access Cluster & VM
+
+```bash
 gcloud container clusters get-credentials <your_project_id>-gke --zone asia-southeast1-a --project <your_project_id>
-```
-
-You can able to ssh to the Jenkins instance
-```
 ssh huyvu2001@35.247.183.230
 ```
 
-## 4. Deploying service on GKE cluster
+---
 
-**Overview**: In this step, we use Helm to deploy our app in our cluster. These app would be setup on three distinct namespaces: 1. api app would deploy on model-serving namespace, 2. Otel Collector, Jaeger, Prometheus, Grafana, and Node exporter would deploy on monitoring namespace, 3. An ingress controller, so we can access our app by domain.
+## 📦 4. Deploying Service on GKE Cluster
 
-To launch up the nginx-ingress controller, and monitoring services, run the below scripts:
-```
+Deploy services to a GKE Cluster with organized namespaces, ensuring a production-ready environment.
+
+### Namespaces Overview
+
+- 📦 **model-serving**: API app.
+- 📈 **monitoring**: Observability tools.
+- 🌐 **nginx-system**: Ingress controller.
+- 📊 **logging**: Logging stack.
+- 📈 **cert-manager**: Cert manager app.
+- 📦 **argocd**: ArgoCD manages CD pipeline.
+
+### a. Deploy NGINX Ingress
+
+```bash
+kubectl create namespace nginx-system
 ./scripts/nginx-system.sh
-./scripts/monitoring.sh
-```
-Since we would access our service through nginx-ingress controller, we would use nip.io to facilitate of the need of domain name. First, we get the external ip of nginx ingress controller service
-
-```
-kubectl ns nginx-system
-kubectl get service
 ```
 
-You should see the EXTERNAL IP of nginx service. Replace that we the default value `host: 34.87.107.6.nip.io` in helm/mychart/templates/nginx-ingress.yaml.
-
-After that, you should start our api service
-
+Then, run the script below to get the nginx service IP address
 ```
+source ./scripts/nginx-system-ip.sh
+```
+
+After this steps, we would go to Vietnix, set the DNS record with IP address. If you have domain (and you should to work with our project), you should do that too.
+![](assets/vietnix.png)
+
+### b. Deploying Cert Manager app
+__Overview__: Cert-manager is a service that manages SSL certificate, solves SSL challenge from Let's Encrypt and so on. Before start the service, we create all other service's namespaces, since we would create Certificate object for each namespace.
+
+```bash
+# Create namespace
+kubectl create namespace model-serving
+kubectl create namespace monitoring
+kubectl create namespace logging
+kubectl create namespace argocd
+
+# Start the service
+kubectl create namespace cert-manager
+./scripts/cert-manager.sh
+```
+
+### b. Deploy Prompt Guardrail Service
+
+```bash
+kubectl create namespace model-serving
 ./scripts/model-serving.sh
 ```
 
-After the service starts up completely, you can access our service at `EXTERNAL_IP.nip.io:8005/docs`.
+If the Certificate in a namepsace issues certificate successfully, it's READY should be "True"
+```bash
+# Check certificate in model-serving
+kubectl get Certificate --namespace model-serving
 
-![service-ui](./assets/service-ui.png)
-
-### a. Prometheus
-
-In docker compose, I define a prometheus configuration file at monitoring/promtheus/config.yml. For kubernetes, we would have to do the same thing. We follow the [intruction](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/additional-scrape-config.md) to setup that for promtheus as follow:
-
-Step 1. First, we tell promtheus that it should collect metrics from otel collector by defining a yaml file at `helm/promtheus/promtheus-additional.yaml`. In this file, I show promtheus the URL of Otel collector, which is `otel-collector.monitoring.svc.cluster.local`, FQDN (fully qualified domain name) in Kubernets.
-
-Step 2. Then run the below command:
-```
-cd helm/prometheus
-kubectl create secret generic additional-scrape-configs --from-file=prometheus-additional.yaml --dry-run=client -oyaml > additional-scrape-configs.yaml
-
-kubectl apply -f additional-scrape-configs.yaml -n monitoring
+# Result
+NAME                               READY   SECRET                             AGE
+prompt-guardrail-tls-certificate   True    prompt-guardrail-tls-certificate   160m
 ```
 
-Step 3. In order for prometheus to recognize the object you have just created by additional-scrape-configs.yaml, I edit promtheus's object as follow
+The secret that goes along with the Certificate contains SSL certificate and its private key. In each of the service's ingress object, they would reference this secret to do TLS termination.
 
-```
-# Final promtheus object
-kubectl get promtheus
-
-# Edit it
-kubectl edit prometheus <prometheus_name>
-```
-
-Step 4: Add the below content as a child of the `spec` key:
-```
+```yaml
+# helm_charts/prompt-guardrail/templates/nginx-ingress.yaml
+...
 spec:
-  ...
-  additionalScrapeConfigs:
-    name: additional-scrape-configs
-    key: prometheus-additional.yaml
-  ...
+  ingressClassName: nginx
+  tls:
+  - hosts:
+      - {{ .Values.ingress.host }}
+    secretName: prompt-guardrail-tls-certificate
+...
 ```
 
+### c. Deploy Otel Collector
 
-Step 5: Restart the promtheus service
-```
-helm upgrade --install promt-guardrail-prom-gra prometheus-community/kube-prometheus-stack --namespace monitoring
-```
-
-To check whether your setting is correct, use port-forwarding to access prometheus website
-```
-kubectl port-forward -n monitoring svc/promt-guardrail-prom-gra-k-prometheus 9090:9090
+```bash
+./scripts/otel-collector.sh
 ```
 
-Go to target-health, you should see promtheus has connected to otel-collector successfully.
-![promtheus-connect-to-otel-collector](./assets/prometheus-connect-otel.png)
-
-### b. Otel Collector
-Overview: we need to tell Otel collector the URI if Jaeger as well as the port it should expose for promtheus to grab. From this [discussion](https://github.com/open-telemetry/opentelemetry-collector-contrib/discussions/31415), I override some of the default value, which is defined at helm/otel_collector/my_values.yaml. I have already applied this value at the `scripts/monitoring.sh`, so we don't have to do anthing.
-
-### c. Grafana:
-You can access Grafana service through port-forwarding. First, let see what the Grafana service name through the command:
-```
-kubectl get service
-```
-It should be something like `promt-guardrail-prom-gra-grafana`
-
-Run the command below. Then you can access it through localhost:3000
-```
-kubectl port-forward -n monitoring svc/promt-guardrail-prom-gra-grafana 3000:80
-```
-The default credentials for Grafana are usually:
-- Username: admin
-- Password: prom-operator (you should change this immediately)
-
-Go to Grafana home -> Add first data source -> Prometheus, pass the promtheus service FQDN, it should be.
-`http://promt-guardrail-prom-gra-k-prometheus.monitoring.svc.cluster.local:9090`. Click save & test to make sure the connection is correct.
-
-![grafana-connect-prometheus](./assets/grafana-connect-pometheus.png)
-
-You can view the node system metrics at Dashboard -> Node Exporters/Nodes
-![node-exporters](./assets/node-exporter.png)
-
-### d. Jaeger
-
-If your otel-collector doesn't go anything wrong, Jaeger should connect to Otel Collector sucessfully. Run the port-forwarding as follow to access Jaeger UI. 
-```
-kubectl port-forward -n monitoring svc/jaeger-query 16686:16686
+### d. Deploy Prometheus Stack
+Overview: Prometheus is a metrics collector, and Grafana is a metrics visualizer. We would use Prometheus to collect metrics from our app, and Grafana to visualize them. After running this script, it would deploy Prometheus, Grafana, and Node Exporter (a system metrics exporter).
+```bash
+kubectl create namespace monitoring
+./scripts/prometheus-stack.sh
 ```
 
-Then, go to our service (the domain you have set at helm/mychart/templates/nginx-ingress.yaml), e.g 34.87.107.6.nip.io. Run a few request test. Then, go to Jaeger, you should see spans that our service send to Jaeger.
-
-<div style="display: flex;">
-  <img src="assets/service-test-spans.png" alt="Image 1" width="400" style="width: 50%;">
-  <img src="assets/jaeger-view.png" alt="Image 2" style="width: 50%;">
-</div>
-
-
-## 5. Setup CI/CD
-
-### a. Setup Jenkins
-
-First, ssh to Jenkins instance
-```
-ssh huyvu2001@35.247.183.230
+You can access grafana through `https://grafana.huy-fsds.info.pro.vn`. The account should be:
+- Username: `huyvu`
+- Password: `huyvu_grafana_2025`
+You can change the username and password in the script above at `helm_charts/kube-promtheus-stack/values.yaml:`
+```yaml
+grafana:
+    adminUser: huyvu
+    adminPassword: huyvu_grafana_2025
 ```
 
-After that, install docker following to instructions
-1. [Install Docker Engine on Ubuntu](https://docs.docker.com/engine/install/ubuntu/)
-2. [Linux post-installation steps for Docker Engine](https://docs.docker.com/engine/install/linux-postinstall/)
+![](assets/grafana.png)
 
-Using vim or nano to create a docker-compose.yaml and past the context of that in jenkins/docker-compose.yml. 
+### f. Deploy Jaeger
+Overview: In this probject, we use Jaeger in all-in-one mode, where traces are stored in memory. This is suitable for development and testing purposes, but not recommended for production use.
+```bash
+./scripts/jaeger.sh
+```
 
-We then start up the Jenkins service using docker compose
+Then, you can access Jaeger UI through `https://jaeger.huy-fsds.info.pro.vn`. No authentication is required.
+
+![](assets/jaeger.png)
+
+### g. Elasticsearch Stack
+Overview: ELK stack is a set of tools for logging and searching logs. It includes Elasticsearch, Kibana, and Filebeat. We would use Filebeat to collect logs from our app, and Elasticsearch to store them. Kibana is used to visualize the logs.
+
+In the folder `scripts/ELK`, we have the scripts to deploy Elasticsearch, Kibana, and Filebeat. The script would create a secret named `elasticsearch-credentials` in the `logging` namespace, which contains the password for the `elastic` user.
+```bash
+# Deploy Elasticsearch
+./scripts/ELK/elasticsearch.sh
+
+# Get Elasticsearch password
+kubectl get secret elasticsearch-credentials -n logging -o jsonpath='{.data.password}' | base64 --decode
+
+# Deploy Filebeat
+./scripts/ELK/filebeat.sh
+
+# Deploy Kibana
+./scripts/ELK/kibana.sh
+```
+
+Then, you can access Kibana through `https://kibana.huy-fsds.info.pro.vn`. The default username is `elastic`, and the password is the one you retrieved earlier from the secret.
+![](assets/elasticsearch.jpeg)
+
+---
+
+## 🔄 5. Setup CI
+
+Overview: We would deploy Jenkins on a VM, and use it to test, build, and update Helm Chart for our app. Jenkins would be configured to pull source code from GitHub, build Docker image, and push it to a private registry. Then, it would update the Helm Chart with the new image tag, and ArgoCD would automatically synchronize with the new Helm Chart. 
+
+### a. Install Jenkins on VM
+
+First, connect ssh to your VM. Replace the domain below with your Jenkins public IP address.
+
+```bash
+ssh huyvu2001@jenkins.huy-fsds.info.pro.vn
+```
+
+Since we deploy Jenkins by docker, installing docker cli with below command
+```
+curl https://get.docker.com > dockerinstall && chmod 777 dockerinstall && ./dockerinstall
+```
+
+Create a new file docker-compose.yml from that at `jenkins/docker-compose.yml`. In this docker compose, we use a docker image, built from jenkins/Dockerfile, which has installed docker-cli. We also mount the docker daemon socket to the container, so that Jenkins can use the docker CLI to build and push Docker images:
 ```
 docker compose up -d
 ```
 
-Execute to jenkins container and install docker:
-```
+Access you jenkins through your VM public IP Address. In my case, I would create a A DNS record, and access it through `jenkins.huy-fsds.info.pro.vn:8081`. 
+
+
+Jenkins requires you to authenticate. The default username is `admin`, and run the below command to get your password:
+```bash
 docker exec -it jenkins /bin/bash
-curl https://get.docker.com > dockerinstall && chmod 777 dockerinstall && ./dockerinstall
-```
-
-After the service starts up completely, you can access Jenkins via <VM_EXTERNAL_IP>:8081. It would require you to give it the password. Return to the terminal that you have already executed in Jenkins container, run the below command to get the password
-
-```
 cat /var/jenkins_home/secrets/initialAdminPassword
 ```
 
-Select install neccessary plugins. Then, completing the setup to get to the Welcome to Jenkins UI.
+Then, configuring the new public access key to your github account follow this tutorial: [Adding a new SSH key to your GitHub account](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account)
 
-<div style="display: flex;">
-  <img src="assets/jenkins_token_password.png" alt="Image 1" width="400" style="width: 50%;">
-  <img src="assets/jenkins_install_plugins.png" alt="Image 2" style="width: 50%;">
-</div>
 
-After that, we need to install neccessary plugins that Jenkins would use for CI/CD. Go to Manage Jenkins -> Plugins -> Available plugins, install Kubernets & Docker pipeline plugins.
-![image](./assets/jenkins_plugins.png)
+After login, click install suggested plugins to complete you setup.
 
-### b. Connect Jenkins to GKE
+Then, you need to do the following plugins. Go to Manage Jenkins → Manage Plugins → Available, and search for the following plugins:
+- Git plugin.
+- Docker pipeline: Use for building the docker image.
 
-Open the terminal that has connected to GKE. Create the model-serving namespace (the namespace that Jenkins would access to deplo our app). 
+
+### b. Setup Webhooks
+Go to your github repository, Settings -> Webhooks → Add webhook
+1. Payload URL: `http://jenkins.huy-fsds.info.pro.vn:8081/github-webhook/`
+2. Content type: `application/json`
+3. Select events: `Let me select individual events.` and check `Pull request`, `Push`, `Branch or tag creation`, `Branch or tag deletion`.
+
+If you want to test the webhook, you can push a commit to your repository, and check the webhook delivery status in GitHub. It should return a 200 OK status.
+
+![](assets/github_webhook.png)
+
+### c. Create Github Access Token
+Go to your GitHub account, Settings → Developer settings → Personal access tokens → Tokens (classic) → Generate new token
+1. Note: Give your token a name.
+2. Expiration: Set the expiration date for your token.
+3. Select scopes: Check `repo` and `workflow` scopes.
+4. Click Generate token.
+
+Copy the generated token, and save it in a safe place. You would need this token to authenticate Jenkins to pull source code from your GitHub repository.
+
+### d. Create Docker Access Token & Jenkins Docker Credentials
+If you use a private Docker registry, you need to create an access token to authenticate Jenkins to pull and push Docker images. The steps to create a Docker access token depend on the registry you are using. Save the token in a safe place, as you would need it to configure Jenkins.
+
+Go to Jenkins → Manage Jenkins → Manage Credentials → System → Global credentials (unrestricted) → Add Credentials
+1. Kind: Username with password.
+2. Scope: Global.
+3. Username: Your Docker registry username.
+4. Password: Your Docker access token.
+
+### e. Create SSH Github Access token & Jenkins SSH Credentials
+If you want Jenkins to be able to push changes back to your GitHub repository, you need to create an SSH access token. This is the same SSH key you created earlier. You need to add the public key to your GitHub account, and configure Jenkins to use the private key.
+
+To generate the private key, you can use the command below:
+Create a ssh key using the command below:
+```bash
+ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
 ```
-kubectl create ns model-serving
+
+Create a public SSH key on github hub follow this tutorial: [Connecting to GitHub with SSH](https://docs.github.com/en/authentication/connecting-to-github-with-ssh).
+
+Then, go to Jenkins → Manage Jenkins → Manage Credentials → System → Global credentials (unrestricted) → Add Credentials
+1. Kind: SSH Username with private key.
+2. Scope: Global.
+3. Username: Your GitHub username.
+4. Private Key: Enter directly, and paste your private key.
+
+### f. Create Jenkins Multibranch Pipeline
+Go to Jenkins → New Item → Multibranch Pipeline
+1. Name: Your pipeline name.
+2. Branch Sources: Add a new github branch source, you would require to enter your GitHub repository URL and Github credentials (you can create a new one with your GitHub access token).
+3. Build Configuration: change path Jenkins file to `jenkins/Jenkinsfile`.
+4. Properties: Add Docker credentials, which you created earlier, and SSH credentials.
+5. Save your pipeline.
+
+![](assets/jenkins.png)
+
+Push a commit to your repository, and Jenkins would automatically detect the changes, and start building your pipeline. You can check the build status in Jenkins.
+
+(*) Comment: When creating Credentials, name the Credential ID since you would reference it in your Jenkinsfile.
+Here we set our credential ids as:
+- `github-private-key`: SSH private key for GitHub.
+- `dockerhub-credentials`: Docker credentials for private registry.
+
+### c. Create CD Pipeline with ArgoCD
+
+Overview: In this section, we would discuss how to connect ArgoCD to our repository, and synchronize with our app.
+
+Run the script below to deploy ArgoCD:
+```bash
+./scripts/argocd.sh
 ```
-Then, allow Jenkins's role (system:anynomous) to access Jenkins with admin role.
-```
-kubectl create clusterrolebinding model-serving-admin-binding \
-  --clusterrole=admin \
-  --serviceaccount=model-serving:default \
-  --namespace=model-serving
 
-kubectl create clusterrolebinding anonymous-admin-binding \
-  --clusterrole=admin \
-  --user=system:anonymous \
-  --namespace=model-serving
+Go to your ArgoCD UI, which is available at `https://argocd.huy-fsds.info.pro.vn`. The default username is `admin`, run the command below to get your password:
+```bash
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 ```
 
-On the Jenkins UI, Go to Mange Jenkins -> Clouds -> New Cloud, add cloud name and select Kubernetes.
+__Step 1: Connecting to a repository__: Go to settings → Repository → Connect Repo
 
-In the next step, we require a 1) GKE External IP, and 2) Kubernetes server certificate key. First, grab you GKE External IP in Google Cloud console -> Kubernetes Engine -> Select you Cluster -> Control Plan Networking -> Copy public endpoint. This is your GKE External IP.
-![GKE-Cluster-IP](./assets/gke-cluster-ip.png)
+1. Connection method: HTTP/HTTPS.
+2. Name: Repository name.
+3. Project: Default.
+4. Repository URL: https://github.com/VuHuy-cse-9/prompt-gruardrail-serving-model.git
+5. Password: Github Access Token.
+6. Click Create.
 
-Then, run the command below to list your GKE information. Search your cluster using Cluster IP.
-```
-cat ~/.kube/config
-```
+__Step 2: Create an application__: Go to ArgoCD Applications → Create App
 
-![cluster-credential](./assets/gke-credentials-key.png)
+1. Application name: You app name, this would be the same as release name.
+2. Project name: Default.
+3. Sync policy: there are two modes:
+    - Manual: When ArgoCD notices you app is different from that in Repo → Turn on a warning (For production stage).
+    - Auto-Sync: Automatically synchronize with you app (For development stage)
+4. Source:
+    - Repository URL: Save as above.
+    - Revision: Select branch that ArgoCD would synchronize with.
+    - Path: Path to Helm Chart Repo (It would automatically detect and recommend for you).
+5. Destination:
+    - Cluster URL: https://kubernetes.default.svc
+    - Namespace: Namespace that we would deploy the app.
+6. Other: It would let you select your value file name, and automatically detect you image tag.
 
-Finally, fill the missing field in Jeknins Cloud setting
-![jenkins_cloud_setting](./assets/jenkins_setup_cloud.png)
+![](assets/argocd.png)
+
+After that, you would know whether your app has already been synced with that on repo, and ArgoCD would notice you.
+
+---
+
+🎉 **You're all set! Your Jenkins pipeline is now ready to build and deploy your Prompt Guardrail Service!**
 
 
-### c. Create CI/CD pipeline
 
-**Create CI/CD pipeline**
-First create a new Github access token at github -> Account -> settings -> Developer settings -> Personal Access tokens -> Tokens classic, create a new one.
-![github-access-token](./assets/github-access-token.png)
-
-Go to Jenkins -> New Item -> Create a Multibranch pipeline with a name "prompt-guardrail-service". In the configuration page, go to "Branch Sources" -> Add source github.
-1. Create a new credentials, using our github access token.
-2. Copy our github repo  and past to to the github HTTPs URL.
-After that, click validate if Jenkins can access the repo. Click apply and save.
-![github-access-token](./assets/jenkins-branch-source.png)
-
-
-**Create Github Webhook**: Go to your repository, click settings -> Webhooks -> Add webhooks -> Past your VM instance External IP with the format `http://<VM_External_IP>:8081/github-webhook/`:
-![github-webhook](./assets/github_webhooks.png)
-
-### d. Setup docker credentials.
-Currently, our docker image is in public state. If you docker image is private, you can setup a docker credential so that Jenkins can access your private docker image.
-
-First, get your docker access token following this [instruction](https://docs.docker.com/security/for-developers/access-tokens/).
-
-Then, in Jenkins UI, go to Manage Jenkins ->  Credentials -> Stores scoped to Jenkins -> System -> Global Credentials -> Add Credentials. Fill in all the field, where Password is your docker access token. for the id, you should set it with: `docker-hub-credentials`. Then, click create.
-![jenkins-docker-hub-credentials](./assets/jenkins-docker-hub-credentials.png)
-
-Now, you have completed setting up Jenkins.
-
-![](./assets/jenkins-build-pipeline.png)

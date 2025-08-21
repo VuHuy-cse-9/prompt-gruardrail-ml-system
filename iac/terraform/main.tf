@@ -20,13 +20,13 @@ provider "google" {
 
 // Google Kubernetes Engine
 resource "google_container_cluster" "primary" {
-  name     = "minhhuy-fsds-gke"
+  name     = "minhhuy-fsds-gke-standard"
   location = var.zone
   initial_node_count = var.cluster_node_count
 
   node_config {
-    disk_size_gb = 80
-    machine_type = "e2-medium"
+    disk_size_gb = 100
+    machine_type = "e2-standard-2"
   }
 
   // Enabling Autopilot for this cluster

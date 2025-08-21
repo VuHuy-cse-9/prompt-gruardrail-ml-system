@@ -11,7 +11,6 @@ services:
     ports:
       - 12345:8000
     restart: unless-stopped
-    command: ["uvicorn","app:app","--workers", "1", "--host", "0.0.0.0", "--port", "8000"]
     networks:
       - prompt_guardrail_network
     depends_on:
@@ -20,7 +19,7 @@ services:
   otel-collector:
     image: otel/opentelemetry-collector:latest
     volumes:
-      - ./monitoring/otel_collector/config.yaml:/etc/otel-collector-config.yaml
+      - ./local/monitoring/otel_collector/config.yaml:/etc/otel-collector-config.yaml
     command: ["--config=/etc/otel-collector-config.yaml"]
     depends_on:
       - jaeger
@@ -40,7 +39,7 @@ services:
   prometheus:
     image: prom/prometheus:latest
     volumes: 
-      - ./monitoring/prometheus/config.yml:/etc/prometheus/prometheus.yml
+      - ./local/monitoring/prometheus/config.yml:/etc/prometheus/prometheus.yml
     ports:
       - 9090:9090
     networks:

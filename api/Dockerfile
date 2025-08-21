@@ -10,4 +10,4 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 
 EXPOSE 8000
 
-CMD ["uvicorn","app:app","--workers", "1", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn","app:app","--workers", "4", "--host", "0.0.0.0", "--port", "8000"]
